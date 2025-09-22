@@ -27,7 +27,7 @@ const Header = () => {
   const companies = [
     {
       id: 'c1',
-      name: 'Company A',
+      name: 'APAC',
       countries: [
         {
           name: 'India',
@@ -40,13 +40,13 @@ const Header = () => {
     },
     {
       id: 'c2',
-      name: 'Company B',
+      name: 'EMEA',
       countries: [
         {
-          name: 'India',
+          name: 'England',
           cities: [
-            { name: 'Hyderabad', offices: ['Office 1'] },
-            { name: 'Chennai', offices: ['Office 1', 'Office 2', 'Office 3'] },
+            { name: 'Durham', offices: ['Office 1'] },
+            { name: 'London', offices: ['Office 1', 'Office 2', 'Office 3'] },
           ],
         },
       ],
