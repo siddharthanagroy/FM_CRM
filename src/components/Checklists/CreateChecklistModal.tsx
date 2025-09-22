@@ -43,7 +43,6 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    
     try {
       await createChecklist({
         ...formData,
@@ -65,22 +64,6 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
     }));
   };
 
-  const handleDepartmentChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const value = e.target.value;
-    if (value === 'all') {
-      setFormData(prev => ({ ...prev, assignedDepartments: ['all'] }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        assignedDepartments: prev.assignedDepartments.includes('all') 
-          ? [value] 
-          : prev.assignedDepartments.includes(value)
-          ? prev.assignedDepartments.filter(d => d !== value)
-          : [...prev.assignedDepartments, value]
-      }));
-    }
-  };
-
   const addItem = () => {
     const newItem: ChecklistItem = {
       id: Date.now().toString(),
@@ -93,26 +76,11 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
   };
 
   const updateItem = (id: string, updates: Partial<ChecklistItem>) => {
-    setItems(prev => prev.map(item => 
-      item.id === id ? { ...item, ...updates } : item
-    ));
+    setItems(prev => prev.map(item => item.id === id ? { ...item, ...updates } : item));
   };
 
   const removeItem = (id: string) => {
     setItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'checkbox':
-        return <CheckSquare className="h-4 w-4" />;
-      case 'text':
-        return <FileText className="h-4 w-4" />;
-      case 'photo':
-        return <Camera className="h-4 w-4" />;
-      default:
-        return <CheckSquare className="h-4 w-4" />;
-    }
   };
 
   const categories = ['Safety', 'Compliance', 'Maintenance', 'Housekeeping', 'Energy Management', 'Security'];
@@ -128,10 +96,7 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
             </div>
             <h2 className="text-xl font-semibold text-gray-900">Create New Checklist</h2>
           </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-          >
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
             <X className="h-5 w-5 text-gray-500" />
           </button>
         </div>
@@ -183,9 +148,7 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
                 onChange={handleInputChange}
               >
                 {categories.map((category) => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
+                  <option key={category} value={category}>{category}</option>
                 ))}
               </select>
             </div>
@@ -202,6 +165,7 @@ const CreateChecklistModal: React.FC<CreateChecklistModalProps> = ({ onClose, on
                 value={formData.frequency}
                 onChange={handleInputChange}
               >
+                <option value="hourly">Hourly</option>
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
