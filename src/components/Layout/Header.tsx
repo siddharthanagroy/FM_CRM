@@ -84,7 +84,7 @@ const Header = () => {
               className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none"
             >
               <Building className="h-4 w-4 text-gray-500" />
-              <span>{selectedOffice || 'Select Company / Office'}</span>
+              <span>{selectedOffice || 'Select Office'}</span>
               <ChevronDown className="h-4 w-4 text-gray-400" />
             </button>
 
