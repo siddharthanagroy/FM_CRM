@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckSquare
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -50,6 +51,7 @@ const Sidebar = () => {
         { icon: FileCheck, label: 'Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
         { icon: Shield, label: 'Compliances', path: '/compliances' },
+        { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
         { icon: Users, label: 'Users', path: '/users' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
         { icon: Settings, label: 'Settings', path: '/settings' },
@@ -60,16 +62,19 @@ const Sidebar = () => {
         { icon: FileCheck, label: 'Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
         { icon: Shield, label: 'Compliances', path: '/compliances' },
+        { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
       ],
       technician: [
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
         { icon: FileCheck, label: 'My Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
+        { icon: CheckSquare, label: 'My Checklists', path: '/checklists' },
       ],
       hk_team: [
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
         { icon: FileCheck, label: 'My Service Orders', path: '/service-orders' },
+        { icon: CheckSquare, label: 'My Checklists', path: '/checklists' },
       ],
       end_user: [
         { icon: MessageSquare, label: 'My Complaints', path: '/complaints' },

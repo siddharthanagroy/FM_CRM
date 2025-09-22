@@ -76,6 +76,54 @@ export interface Notification {
   relatedType?: string;
 }
 
+export interface ChecklistItem {
+  id: string;
+  title: string;
+  description: string;
+  type: 'checkbox' | 'text' | 'dropdown' | 'photo' | 'signature';
+  required: boolean;
+  options?: string[];
+}
+
+export interface Checklist {
+  id: string;
+  checklistId: string;
+  name: string;
+  description: string;
+  category: string;
+  frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly' | 'on-demand';
+  priority: 'high' | 'medium' | 'low';
+  estimatedDuration: number; // in minutes
+  assignedDepartments: string[];
+  status: 'active' | 'draft' | 'archived';
+  items: ChecklistItem[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+}
+
+export interface ChecklistExecution {
+  id: string;
+  executionId: string;
+  checklistId: string;
+  checklistName: string;
+  assignedTo: string;
+  status: 'pending' | 'in-progress' | 'completed';
+  responses: {
+    itemId: string;
+    value: any;
+    notes?: string;
+    photoUrl?: string;
+    signatureUrl?: string;
+  }[];
+  generalNotes?: string;
+  createdAt: string;
+  updatedAt: string;
+  dueDate: string;
+  completedAt?: string;
+  startedAt?: string;
+}
+
 export interface Asset {
   id: string;
   assetId: string;
@@ -119,6 +167,8 @@ interface DataContextType {
   serviceOrders: ServiceOrder[];
   compliances: Compliance[];
   notifications: Notification[];
+  checklists: Checklist[];
+  checklistExecutions: ChecklistExecution[];
   createComplaint: (complaint: Omit<Complaint, 'id' | 'ticketId' | 'createdAt' | 'updatedAt' | 'status'>) => void;
   updateComplaint: (id: string, updates: Partial<Complaint>) => void;
   bulkImportComplaints: (complaints: any[]) => void;
@@ -132,6 +182,11 @@ interface DataContextType {
   createCompliance: (compliance: Omit<Compliance, 'id' | 'complianceId' | 'createdAt' | 'updatedAt'>) => void;
   updateCompliance: (id: string, updates: Partial<Compliance>) => void;
   deleteCompliance: (id: string) => void;
+  createChecklist: (checklist: Omit<Checklist, 'id' | 'checklistId' | 'createdAt' | 'updatedAt' | 'createdBy'>) => void;
+  updateChecklist: (id: string, updates: Partial<Checklist>) => void;
+  deleteChecklist: (id: string) => void;
+  createChecklistExecution: (execution: Omit<ChecklistExecution, 'id' | 'executionId' | 'createdAt' | 'updatedAt' | 'status'>) => void;
+  updateChecklistExecution: (id: string, updates: Partial<ChecklistExecution>) => void;
   markNotificationAsRead: (id: string) => void;
   getUnreadNotifications: () => Notification[];
 }
@@ -167,6 +222,19 @@ const generateServiceOrderId = (): string => {
 const generateComplianceId = (): string => {
   const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
   return `COMP-${sequence}`;
+};
+
+const generateChecklistId = (): string => {
+  const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+  return `CHK-${sequence}`;
+};
+
+const generateExecutionId = (): string => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+  return `EXE-${year}-${month}-${sequence}`;
 };
 
 const generateAssetId = (): string => {
@@ -378,6 +446,101 @@ const mockNotifications: Notification[] = [
   },
 ];
 
+const mockChecklists: Checklist[] = [
+  {
+    id: '1',
+    checklistId: 'CHK-001',
+    name: 'Daily Safety Inspection',
+    description: 'Daily safety checks for common areas and equipment',
+    category: 'Safety',
+    frequency: 'daily',
+    priority: 'high',
+    estimatedDuration: 30,
+    assignedDepartments: ['all'],
+    status: 'active',
+    items: [
+      {
+        id: '1',
+        title: 'Check fire extinguisher accessibility',
+        description: 'Ensure fire extinguishers are accessible and not blocked',
+        type: 'checkbox',
+        required: true,
+      },
+      {
+        id: '2',
+        title: 'Inspect emergency exit signs',
+        description: 'Verify all emergency exit signs are illuminated and visible',
+        type: 'checkbox',
+        required: true,
+      },
+      {
+        id: '3',
+        title: 'Document any safety concerns',
+        description: 'Note any safety issues or concerns observed',
+        type: 'text',
+        required: false,
+      },
+    ],
+    createdAt: '2024-01-01T08:00:00Z',
+    updatedAt: '2024-01-01T08:00:00Z',
+    createdBy: 'FM Manager',
+  },
+  {
+    id: '2',
+    checklistId: 'CHK-002',
+    name: 'HVAC Monthly Maintenance',
+    description: 'Monthly preventive maintenance checks for HVAC systems',
+    category: 'Maintenance',
+    frequency: 'monthly',
+    priority: 'medium',
+    estimatedDuration: 60,
+    assignedDepartments: ['hvac'],
+    status: 'active',
+    items: [
+      {
+        id: '1',
+        title: 'Check air filter condition',
+        description: 'Inspect and rate the condition of air filters',
+        type: 'dropdown',
+        required: true,
+        options: ['Good', 'Fair', 'Poor', 'Needs Replacement'],
+      },
+      {
+        id: '2',
+        title: 'Test thermostat functionality',
+        description: 'Verify thermostat is responding correctly',
+        type: 'checkbox',
+        required: true,
+      },
+      {
+        id: '3',
+        title: 'Take photo of equipment condition',
+        description: 'Document current condition of HVAC unit',
+        type: 'photo',
+        required: false,
+      },
+    ],
+    createdAt: '2024-01-01T08:00:00Z',
+    updatedAt: '2024-01-01T08:00:00Z',
+    createdBy: 'FM Manager',
+  },
+];
+
+const mockChecklistExecutions: ChecklistExecution[] = [
+  {
+    id: '1',
+    executionId: 'EXE-2024-01-001',
+    checklistId: '1',
+    checklistName: 'Daily Safety Inspection',
+    assignedTo: 'John Technician',
+    status: 'pending',
+    responses: [],
+    createdAt: '2024-01-15T08:00:00Z',
+    updatedAt: '2024-01-15T08:00:00Z',
+    dueDate: '2024-01-15T17:00:00Z',
+  },
+];
+
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [complaints, setComplaints] = useState<Complaint[]>(mockComplaints);
   const [assets, setAssets] = useState<Asset[]>(mockAssets);
@@ -385,6 +548,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [serviceOrders, setServiceOrders] = useState<ServiceOrder[]>(mockServiceOrders);
   const [compliances, setCompliances] = useState<Compliance[]>(mockCompliances);
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
+  const [checklists, setChecklists] = useState<Checklist[]>(mockChecklists);
+  const [checklistExecutions, setChecklistExecutions] = useState<ChecklistExecution[]>(mockChecklistExecutions);
 
   const createComplaint = (complaintData: Omit<Complaint, 'id' | 'ticketId' | 'createdAt' | 'updatedAt' | 'status'>) => {
     const newComplaint: Complaint = {
@@ -581,6 +746,67 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     setCompliances(prev => prev.filter(compliance => compliance.id !== id));
   };
 
+  const createChecklist = (checklistData: Omit<Checklist, 'id' | 'checklistId' | 'createdAt' | 'updatedAt' | 'createdBy'>) => {
+    const newChecklist: Checklist = {
+      ...checklistData,
+      id: Date.now().toString(),
+      checklistId: generateChecklistId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      createdBy: 'Current User', // In real app, get from auth context
+    };
+    setChecklists(prev => [newChecklist, ...prev]);
+  };
+
+  const updateChecklist = (id: string, updates: Partial<Checklist>) => {
+    setChecklists(prev => prev.map(checklist => 
+      checklist.id === id 
+        ? { ...checklist, ...updates, updatedAt: new Date().toISOString() }
+        : checklist
+    ));
+  };
+
+  const deleteChecklist = (id: string) => {
+    setChecklists(prev => prev.filter(checklist => checklist.id !== id));
+  };
+
+  const createChecklistExecution = (executionData: Omit<ChecklistExecution, 'id' | 'executionId' | 'createdAt' | 'updatedAt' | 'status'>) => {
+    const newExecution: ChecklistExecution = {
+      ...executionData,
+      id: Date.now().toString(),
+      executionId: generateExecutionId(),
+      status: 'completed',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      completedAt: new Date().toISOString(),
+      startedAt: new Date().toISOString(),
+    };
+    setChecklistExecutions(prev => [newExecution, ...prev]);
+
+    // Create notification
+    const notification: Notification = {
+      id: Date.now().toString() + '_checklist',
+      type: 'system',
+      title: 'Checklist Completed',
+      message: `${executionData.checklistName} has been completed by ${executionData.assignedTo}`,
+      priority: 'medium',
+      userRole: 'fm_manager',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedId: newExecution.id,
+      relatedType: 'checklist_execution',
+    };
+    setNotifications(prev => [notification, ...prev]);
+  };
+
+  const updateChecklistExecution = (id: string, updates: Partial<ChecklistExecution>) => {
+    setChecklistExecutions(prev => prev.map(execution => 
+      execution.id === id 
+        ? { ...execution, ...updates, updatedAt: new Date().toISOString() }
+        : execution
+    ));
+  };
+
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(notification => 
       notification.id === id 
@@ -634,6 +860,8 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       serviceOrders,
       compliances,
       notifications,
+      checklists,
+      checklistExecutions,
       createComplaint,
       updateComplaint,
       bulkImportComplaints,
@@ -647,6 +875,11 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       createCompliance,
       updateCompliance,
       deleteCompliance,
+      createChecklist,
+      updateChecklist,
+      deleteChecklist,
+      createChecklistExecution,
+      updateChecklistExecution,
       markNotificationAsRead,
       getUnreadNotifications,
     }}>

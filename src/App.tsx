@@ -9,6 +9,7 @@ import WorkOrders from './components/WorkOrders/WorkOrders';
 import ServiceOrders from './components/ServiceOrders/ServiceOrders';
 import Assets from './components/Assets/Assets';
 import Compliances from './components/Compliances/Compliances';
+import Checklists from './components/Checklists/Checklists';
 import Layout from './components/Layout/Layout';
 import './App.css';
 
@@ -34,6 +35,7 @@ function AppRoutes() {
         <Route path="/service-orders" element={<ServiceOrders />} />
         <Route path="/assets" element={<Assets />} />
         <Route path="/compliances" element={<Compliances />} />
+        <Route path="/checklists" element={<Checklists />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
     </Layout>
