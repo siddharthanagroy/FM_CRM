@@ -167,7 +167,7 @@ const Header = () => {
                                 {expandedCities.includes(
                                   `${company.id}-${country.name}-${city.name}`
                                 ) &&
-                                {city.offices.map((office) => (
+                                city.offices.map((office) => (
   <button
     key={office}
     onClick={() => {
