@@ -164,22 +164,7 @@ const Header = () => {
                                 </button>
 
                                 {/* Offices */}
-                                {expandedCities.includes(
-                                  `${company.id}-${country.name}-${city.name}`
-                                ) &&
-                                  {city.offices.map((office) => (
-  <button
-    key={office}
-    onClick={() => {
-      setSelectedOffice(office); // only the office name for display
-      setShowDropdown(false); // close dropdown
-    }}
-    className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
-  >
-    {office}
-  </button>
-))}
-     
+                                setSelectedOffice(office)
 
                                   ))}
                               </div>
