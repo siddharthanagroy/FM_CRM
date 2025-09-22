@@ -17,7 +17,8 @@ const Header = () => {
   const unreadNotifications = getUnreadNotifications();
 
   // Company/office selection states
-  const [selectedOffice, setSelectedOffice] = React.useState('');
+  const [selectedOffice, setSelectedOffice] = React.useState('');// full path
+  
   const [expandedCompanies, setExpandedCompanies] = React.useState<string[]>([]);
   const [expandedCountries, setExpandedCountries] = React.useState<string[]>([]);
   const [expandedCities, setExpandedCities] = React.useState<string[]>([]);
@@ -166,17 +167,19 @@ const Header = () => {
                                 {expandedCities.includes(
                                   `${company.id}-${country.name}-${city.name}`
                                 ) &&
-                                  city.offices.map((office) => (
-<button
-  key={office}
-  onClick={() => {
-    setSelectedOffice(`${company.name} / ${country.name} / ${city.name} / ${office}`);
-    setShowDropdown(false); // closes the dropdown
-  }}
-  className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
->
-  {office}
-</button>
+                                {city.offices.map((office) => (
+  <button
+    key={office}
+    onClick={() => {
+      setSelectedOffice(office); // only the office name for display
+      setShowDropdown(false); // close dropdown
+    }}
+    className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
+  >
+    {office}
+  </button>
+))}
+     
 
                                   ))}
                               </div>
