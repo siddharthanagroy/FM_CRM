@@ -80,13 +80,14 @@ const Header = () => {
           {/* Company / Office Tree Dropdown */}
           <div className="relative">
             <button
-              onClick={() => setShowDropdown(!showDropdown)}
-              className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none"
-            >
-              <Building className="h-4 w-4 text-gray-500" />
-              <span>{selectedOffice || 'Select Office'}</span>
-              <ChevronDown className="h-4 w-4 text-gray-400" />
-            </button>
+  onClick={() => setShowDropdown(!showDropdown)}
+  className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none"
+>
+  <Building className="h-4 w-4 text-gray-500" />
+  <span>{selectedOffice || 'Select Office'}</span>
+  <ChevronDown className="h-4 w-4 text-gray-400" />
+</button>
+
 
             {showDropdown && (
               <div className="absolute mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
@@ -166,17 +167,17 @@ const Header = () => {
                                   `${company.id}-${country.name}-${city.name}`
                                 ) &&
                                   city.offices.map((office) => (
-                                    <button
-                                      key={office}
-                                      onClick={() =>
-                                        setSelectedOffice(
-                                          `${company.name} / ${country.name} / ${city.name} / ${office}`
-                                        )
-                                      }
-                                      className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
-                                    >
-                                      {office}
-                                    </button>
+<button
+  key={office}
+  onClick={() => {
+    setSelectedOffice(`${company.name} / ${country.name} / ${city.name} / ${office}`);
+    setShowDropdown(false); // closes the dropdown
+  }}
+  className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
+>
+  {office}
+</button>
+
                                   ))}
                               </div>
                             ))}
