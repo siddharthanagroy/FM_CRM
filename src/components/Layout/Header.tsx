@@ -35,9 +35,9 @@ const Header = () => {
       <div className="flex items-center justify-between">
         {/* Welcome */}
         <div className="flex items-center space-x-4">
-          <h1 className="text-2xl font-semibold text-gray-900">
-            Welcome back, {user?.name.split(' ')[0]}!
-          </h1>
+          <h1 className="hidden sm:block text-2xl font-semibold text-gray-900">
+  Welcome back, {user?.name.split(' ')[0]}!
+</h1>
         </div>
 
         {/* Right section */}
