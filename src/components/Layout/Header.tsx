@@ -166,7 +166,8 @@ const Header = () => {
                                 {/* Offices */}
                                 setSelectedOffice(office)
 
-                                  ))}
+                                  ))
+                                }
                               </div>
                             ))}
                         </div>
