@@ -17,8 +17,7 @@ const Header = () => {
   const unreadNotifications = getUnreadNotifications();
 
   // Company/office selection states
-  const [selectedOffice, setSelectedOffice] = React.useState('');// full path
-  
+  const [selectedOffice, setSelectedOffice] = React.useState(''); // Display name only
   const [expandedCompanies, setExpandedCompanies] = React.useState<string[]>([]);
   const [expandedCountries, setExpandedCountries] = React.useState<string[]>([]);
   const [expandedCities, setExpandedCities] = React.useState<string[]>([]);
@@ -81,14 +80,13 @@ const Header = () => {
           {/* Company / Office Tree Dropdown */}
           <div className="relative">
             <button
-  onClick={() => setShowDropdown(!showDropdown)}
-  className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none"
->
-  <Building className="h-4 w-4 text-gray-500" />
-  <span>{selectedOffice || 'Select Office'}</span>
-  <ChevronDown className="h-4 w-4 text-gray-400" />
-</button>
-
+              onClick={() => setShowDropdown(!showDropdown)}
+              className="flex items-center space-x-2 border border-gray-300 rounded-md px-3 py-2 text-sm bg-white focus:outline-none"
+            >
+              <Building className="h-4 w-4 text-gray-500" />
+              <span>{selectedOffice || 'Select Office'}</span>
+              <ChevronDown className="h-4 w-4 text-gray-400" />
+            </button>
 
             {showDropdown && (
               <div className="absolute mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
@@ -164,10 +162,21 @@ const Header = () => {
                                 </button>
 
                                 {/* Offices */}
-                                setSelectedOffice(office)
-
-                                  ))
-                                }
+                                {expandedCities.includes(
+                                  `${company.id}-${country.name}-${city.name}`
+                                ) &&
+                                  city.offices.map((office) => (
+                                    <button
+                                      key={office}
+                                      onClick={() => {
+                                        setSelectedOffice(office); // only office name
+                                        setShowDropdown(false); // close dropdown
+                                      }}
+                                      className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
+                                    >
+                                      {office}
+                                    </button>
+                                  ))}
                               </div>
                             ))}
                         </div>
@@ -180,9 +189,7 @@ const Header = () => {
 
           {/* Notifications */}
           <div className="relative">
-            <button
-              className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative"
-            >
+            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
               <Bell className="h-5 w-5" />
               {unreadNotifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
