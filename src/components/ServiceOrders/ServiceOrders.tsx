@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Filter, Search, FileCheck, Clock } from 'lucide-react';
+import { Plus, Filter, Search, FileCheck, Clock, Wrench } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import ServiceOrderCard from './ServiceOrderCard';
@@ -41,13 +41,14 @@ const ServiceOrders = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <Wrench className="h-8 w-8 mr-3 text-green-600" />
             {user?.role === 'technician' || user?.role === 'hk_team' ? 'My Service Orders' : 'Service Orders'}
           </h1>
           <p className="text-gray-600">
             {user?.role === 'technician' || user?.role === 'hk_team'
-              ? 'Your assigned service tasks and compliance work'
-              : 'Manage service orders for complaints and compliance requirements'
+              ? 'Your assigned non-asset service tasks and compliance work'
+              : 'Manage non-asset service orders (compliance, cleaning, general services)'
             }
           </p>
         </div>
@@ -128,9 +129,9 @@ const ServiceOrders = () => {
             className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Types</option>
-            <option value="complaint">Complaint</option>
-            <option value="compliance">Compliance</option>
             <option value="general">General</option>
+            <option value="compliance">Compliance</option>
+            <option value="cleaning">Cleaning</option>
           </select>
         </div>
       </div>
@@ -148,8 +149,8 @@ const ServiceOrders = () => {
               {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : user?.role === 'technician' || user?.role === 'hk_team'
-                ? 'No service orders have been assigned to you yet.'
-                : 'No service orders have been created yet.'
+                ? 'No non-asset service orders have been assigned to you yet.'
+                : 'No non-asset service orders have been created yet.'
               }
             </p>
           </div>

@@ -1,44 +1,81 @@
 import React, { useState } from 'react';
-import { Plus, Filter, Search, Download, Upload } from 'lucide-react';
+import { Plus, Filter, Search, Download, Upload, FileText } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
-import ComplaintCard from './ComplaintCard';
-import CreateComplaintModal from './CreateComplaintModal';
+import ServiceRequestCard from './ServiceRequestCard';
+import CreateServiceRequestModal from './CreateServiceRequestModal';
 import Papa from 'papaparse';
 
-const Complaints = () => {
-  const { complaints, bulkImportComplaints } = useData();
+const ServiceRequests = () => {
+  const { complaints, bulkImportComplaints, createWorkOrder, createServiceOrder } = useData();
   const { user } = useAuth();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
-  // Filter complaints
-  const filteredComplaints = complaints.filter(complaint => {
-    const matchesSearch = complaint.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         complaint.ticketId.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || complaint.status === statusFilter;
-    const matchesCategory = categoryFilter === 'all' || complaint.category === categoryFilter;
+  // Filter service requests
+  const filteredServiceRequests = complaints.filter(sr => {
+    const matchesSearch = sr.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sr.ticketId.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || sr.status === statusFilter;
+    const matchesCategory = categoryFilter === 'all' || sr.category === categoryFilter;
     
-    // For end users, only show their complaints
+    // For end users, only show their service requests
     if (user?.role === 'end_user') {
-      return matchesSearch && matchesStatus && matchesCategory && complaint.requesterEmail === user.email;
+      return matchesSearch && matchesStatus && matchesCategory && sr.requesterEmail === user.email;
     }
     
     return matchesSearch && matchesStatus && matchesCategory;
   });
 
-  const canCreateComplaint = user?.role === 'end_user' || user?.role === 'admin' || user?.role === 'fm_manager';
+  const canCreateServiceRequest = user?.role === 'end_user' || user?.role === 'admin' || user?.role === 'fm_manager';
+
+  // Convert to Work Order
+  const handleConvertToWorkOrder = (serviceRequest: any) => {
+    const workOrder = {
+      title: `WO: ${serviceRequest.title}`,
+      description: `Asset-related work order converted from SR ${serviceRequest.ticketId}: ${serviceRequest.description}`,
+      type: 'corrective' as const,
+      priority: serviceRequest.priority,
+      status: 'open' as const,
+      assignedTo: serviceRequest.assignedTo || '',
+      complaintId: serviceRequest.id,
+      dueDate: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours from now
+      estimatedHours: serviceRequest.priority === 'high' ? 4 : serviceRequest.priority === 'medium' ? 6 : 8,
+    };
+    
+    createWorkOrder(workOrder);
+    alert(`Work Order created successfully for SR ${serviceRequest.ticketId}`);
+  };
+
+  // Convert to Service Order
+  const handleConvertToServiceOrder = (serviceRequest: any) => {
+    const serviceOrder = {
+      title: `SO: ${serviceRequest.title}`,
+      description: `Service order converted from SR ${serviceRequest.ticketId}: ${serviceRequest.description}`,
+      type: 'general' as const,
+      priority: serviceRequest.priority,
+      status: 'open' as const,
+      assignedTo: serviceRequest.assignedTo || '',
+      assignedTeam: serviceRequest.assignedTeam,
+      complaintId: serviceRequest.id,
+      dueDate: new Date(Date.now() + 72 * 60 * 60 * 1000).toISOString(), // 72 hours from now
+      estimatedHours: serviceRequest.priority === 'high' ? 2 : serviceRequest.priority === 'medium' ? 4 : 6,
+    };
+    
+    createServiceOrder(serviceOrder);
+    alert(`Service Order created successfully for SR ${serviceRequest.ticketId}`);
+  };
 
   // Export CSV
   const handleExport = () => {
-    const csv = Papa.unparse(filteredComplaints);
+    const csv = Papa.unparse(filteredServiceRequests);
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', 'complaints.csv');
+    link.setAttribute('download', 'service_requests.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -54,7 +91,7 @@ const Complaints = () => {
       skipEmptyLines: true,
       complete: (result) => {
         bulkImportComplaints(result.data);
-        alert(`Imported ${result.data.length} complaints successfully!`);
+        alert(`Imported ${result.data.length} service requests successfully!`);
       },
     });
   };
@@ -64,13 +101,14 @@ const Complaints = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            {user?.role === 'end_user' ? 'My Complaints' : 'Complaints'}
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <FileText className="h-8 w-8 mr-3 text-blue-600" />
+            {user?.role === 'end_user' ? 'My Service Requests' : 'Service Requests'}
           </h1>
           <p className="text-gray-600">
             {user?.role === 'end_user' 
-              ? 'Track your submitted complaints and requests'
-              : 'Manage facility maintenance complaints and requests'
+              ? 'Track your submitted service requests and issues'
+              : 'Manage facility service requests from end users'
             }
           </p>
         </div>
@@ -91,18 +129,21 @@ const Complaints = () => {
           )}
 
           {/* Export */}
-          <button className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+          <button 
+            onClick={handleExport}
+            className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export
           </button>
           
-          {canCreateComplaint && (
+          {canCreateServiceRequest && (
             <button
               onClick={() => setShowCreateModal(true)}
               className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-2" />
-              New Complaint
+              New Service Request
             </button>
           )}
         </div>
@@ -116,7 +157,7 @@ const Complaints = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
-              placeholder="Search complaints, ticket ID..."
+              placeholder="Search service requests, SR ID..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -160,53 +201,58 @@ const Complaints = () => {
       {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="text-2xl font-bold text-gray-900">{filteredComplaints.length}</div>
-          <div className="text-sm text-gray-600">Total Complaints</div>
+          <div className="text-2xl font-bold text-gray-900">{filteredServiceRequests.length}</div>
+          <div className="text-sm text-gray-600">Total Service Requests</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="text-2xl font-bold text-orange-600">
-            {filteredComplaints.filter(c => ['open', 'assigned', 'in-progress'].includes(c.status)).length}
+            {filteredServiceRequests.filter(sr => ['open', 'assigned', 'in-progress'].includes(sr.status)).length}
           </div>
           <div className="text-sm text-gray-600">Active</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="text-2xl font-bold text-green-600">
-            {filteredComplaints.filter(c => c.status === 'resolved').length}
+            {filteredServiceRequests.filter(sr => sr.status === 'resolved').length}
           </div>
           <div className="text-sm text-gray-600">Resolved</div>
         </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="text-2xl font-bold text-red-600">
-            {filteredComplaints.filter(c => c.priority === 'high').length}
+            {filteredServiceRequests.filter(sr => sr.priority === 'high').length}
           </div>
           <div className="text-sm text-gray-600">High Priority</div>
         </div>
       </div>
 
-      {/* Complaints List */}
+      {/* Service Requests List */}
       <div className="space-y-4">
-        {filteredComplaints.length > 0 ? (
-          filteredComplaints.map(complaint => (
-            <ComplaintCard key={complaint.id} complaint={complaint} />
+        {filteredServiceRequests.length > 0 ? (
+          filteredServiceRequests.map(serviceRequest => (
+            <ServiceRequestCard 
+              key={serviceRequest.id} 
+              serviceRequest={serviceRequest}
+              onConvertToWorkOrder={handleConvertToWorkOrder}
+              onConvertToServiceOrder={handleConvertToServiceOrder}
+            />
           ))
         ) : (
           <div className="bg-white p-8 rounded-lg shadow-sm border border-gray-200 text-center">
-            <div className="text-gray-400 text-lg mb-2">No complaints found</div>
+            <div className="text-gray-400 text-lg mb-2">No service requests found</div>
             <p className="text-gray-500">
               {searchTerm || statusFilter !== 'all' || categoryFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
-                : canCreateComplaint
-                ? 'Get started by creating your first complaint.'
-                : 'No complaints have been submitted yet.'
+                : canCreateServiceRequest
+                ? 'Get started by creating your first service request.'
+                : 'No service requests have been submitted yet.'
               }
             </p>
           </div>
         )}
       </div>
 
-      {/* Create Complaint Modal */}
+      {/* Create Service Request Modal */}
       {showCreateModal && (
-        <CreateComplaintModal
+        <CreateServiceRequestModal
           onClose={() => setShowCreateModal(false)}
           onCreate={() => setShowCreateModal(false)}
         />
@@ -215,4 +261,4 @@ const Complaints = () => {
   );
 };
 
-export default Complaints;
+export default ServiceRequests;

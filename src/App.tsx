@@ -4,7 +4,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
-import Complaints from './components/Complaints/Complaints';
+import ServiceRequests from './components/ServiceRequests/ServiceRequests';
 import WorkOrders from './components/WorkOrders/WorkOrders';
 import ServiceOrders from './components/ServiceOrders/ServiceOrders';
 import Assets from './components/Assets/Assets';
@@ -30,7 +30,8 @@ function AppRoutes() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/complaints" element={<Complaints />} />
+        <Route path="/service-requests" element={<ServiceRequests />} />
+        <Route path="/complaints" element={<ServiceRequests />} />
         <Route path="/work-orders" element={<WorkOrders />} />
         <Route path="/service-orders" element={<ServiceOrders />} />
         <Route path="/assets" element={<Assets />} />

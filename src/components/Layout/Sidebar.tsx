@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, 
-  MessageSquare, 
+  FileText, 
   ClipboardList, 
   Package, 
   Building2, 
@@ -10,12 +10,13 @@ import {
   Settings,
   BarChart3,
   Shield,
-  FileCheck,
+  Wrench,
   Menu,
   X,
   ChevronLeft,
   ChevronRight,
-  CheckSquare
+  CheckSquare,
+  Truck
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -46,38 +47,40 @@ const Sidebar = () => {
 
     const roleBasedItems: Record<string, any[]> = {
       admin: [
-        { icon: MessageSquare, label: 'Complaints', path: '/complaints' },
+        { icon: FileText, label: 'Service Requests', path: '/service-requests' },
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
-        { icon: FileCheck, label: 'Service Orders', path: '/service-orders' },
+        { icon: Wrench, label: 'Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
-        { icon: Shield, label: 'Compliances', path: '/compliances' },
+        { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
+        { icon: Truck, label: 'Vendors', path: '/vendors' },
         { icon: Users, label: 'Users', path: '/users' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
         { icon: Settings, label: 'Settings', path: '/settings' },
       ],
       fm_manager: [
-        { icon: MessageSquare, label: 'Complaints', path: '/complaints' },
+        { icon: FileText, label: 'Service Requests', path: '/service-requests' },
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
-        { icon: FileCheck, label: 'Service Orders', path: '/service-orders' },
+        { icon: Wrench, label: 'Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
-        { icon: Shield, label: 'Compliances', path: '/compliances' },
+        { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
+        { icon: Truck, label: 'Vendors', path: '/vendors' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
       ],
       technician: [
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
-        { icon: FileCheck, label: 'My Service Orders', path: '/service-orders' },
+        { icon: Wrench, label: 'My Service Orders', path: '/service-orders' },
         { icon: Package, label: 'Assets', path: '/assets' },
         { icon: CheckSquare, label: 'My Checklists', path: '/checklists' },
       ],
       hk_team: [
         { icon: ClipboardList, label: 'Work Orders', path: '/work-orders' },
-        { icon: FileCheck, label: 'My Service Orders', path: '/service-orders' },
+        { icon: Wrench, label: 'My Service Orders', path: '/service-orders' },
         { icon: CheckSquare, label: 'My Checklists', path: '/checklists' },
       ],
       end_user: [
-        { icon: MessageSquare, label: 'My Complaints', path: '/complaints' },
+        { icon: FileText, label: 'My Service Requests', path: '/service-requests' },
       ],
     };
 

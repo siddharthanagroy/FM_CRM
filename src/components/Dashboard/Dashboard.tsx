@@ -8,6 +8,8 @@ import {
   Package,
   BarChart3,
   Calendar,
+  FileText,
+  Wrench,
 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
@@ -164,18 +166,18 @@ const Dashboard = () => {
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard
-          title="Total Complaints"
+          title="Service Requests"
           value={totalComplaints.toString()}
-          icon={AlertTriangle}
-          color="red"
+          icon={FileText}
+          color="blue"
           subtitle={`${openComplaints} active`}
           trend="+12%"
         />
         <MetricCard
           title="Work Orders"
           value={totalWorkOrders.toString()}
-          icon={CheckCircle}
-          color="green"
+          icon={Wrench}
+          color="purple"
           subtitle={`${completedWorkOrders} completed`}
           trend="+8%"
         />

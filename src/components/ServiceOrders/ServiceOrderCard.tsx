@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Calendar, User, AlertTriangle, FileCheck, Shield, MessageSquare } from 'lucide-react';
+import { Clock, Calendar, User, AlertTriangle, FileCheck, Shield, MessageSquare, Wrench } from 'lucide-react';
 import { ServiceOrder } from '../../contexts/DataContext';
 
 interface ServiceOrderCardProps {
@@ -19,11 +19,11 @@ const ServiceOrderCard: React.FC<ServiceOrderCardProps> = ({ serviceOrder }) => 
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'complaint':
-        return <MessageSquare className="h-4 w-4" />;
+      case 'general':
+        return <Wrench className="h-4 w-4" />;
       case 'compliance':
         return <Shield className="h-4 w-4" />;
-      case 'general':
+      case 'cleaning':
         return <FileCheck className="h-4 w-4" />;
       default:
         return <FileCheck className="h-4 w-4" />;
@@ -32,12 +32,12 @@ const ServiceOrderCard: React.FC<ServiceOrderCardProps> = ({ serviceOrder }) => 
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'complaint':
-        return 'bg-red-100 text-red-800 border-red-200';
-      case 'compliance':
-        return 'bg-purple-100 text-purple-800 border-purple-200';
       case 'general':
         return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'compliance':
+        return 'bg-purple-100 text-purple-800 border-purple-200';
+      case 'cleaning':
+        return 'bg-green-100 text-green-800 border-green-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }

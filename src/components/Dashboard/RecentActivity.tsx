@@ -7,14 +7,14 @@ const RecentActivity = () => {
 
   // Combine and sort recent activities
   const activities = [
-    ...complaints.slice(0, 3).map(complaint => ({
-      id: complaint.id,
-      type: 'complaint',
-      title: complaint.title,
-      status: complaint.status,
-      time: complaint.updatedAt,
-      user: complaint.requesterName,
-      location: complaint.location,
+    ...complaints.slice(0, 3).map(serviceRequest => ({
+      id: serviceRequest.id,
+      type: 'service-request',
+      title: serviceRequest.title,
+      status: serviceRequest.status,
+      time: serviceRequest.updatedAt,
+      user: serviceRequest.requesterName,
+      location: serviceRequest.location,
     })),
     ...workOrders.slice(0, 3).map(workOrder => ({
       id: workOrder.id,
@@ -91,6 +91,7 @@ const RecentActivity = () => {
                 </span>
                 
                 {activity.type === 'complaint' && activity.location && (
+                {activity.type === 'service-request' && activity.location && (
                   <span className="text-gray-400">• {activity.location}</span>
                 )}
               </div>

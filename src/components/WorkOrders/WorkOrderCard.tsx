@@ -1,5 +1,5 @@
 import React from 'react';
-import { Clock, Calendar, User, AlertTriangle, Package, Wrench, FileText } from 'lucide-react';
+import { Clock, Calendar, User, AlertTriangle, Package, Wrench, FileText, Settings } from 'lucide-react';
 import { WorkOrder } from '../../contexts/DataContext';
 
 interface WorkOrderCardProps {
@@ -19,12 +19,12 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder }) => {
 
   const getTypeIcon = (type: string) => {
     switch (type) {
-      case 'complaint':
-        return <FileText className="h-4 w-4" />;
-      case 'preventive':
-        return <Calendar className="h-4 w-4" />;
       case 'corrective':
         return <Wrench className="h-4 w-4" />;
+      case 'preventive':
+        return <Settings className="h-4 w-4" />;
+      case 'inspection':
+        return <FileText className="h-4 w-4" />;
       default:
         return <Package className="h-4 w-4" />;
     }
@@ -32,12 +32,12 @@ const WorkOrderCard: React.FC<WorkOrderCardProps> = ({ workOrder }) => {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'complaint':
+      case 'corrective':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'preventive':
         return 'bg-green-100 text-green-800 border-green-200';
-      case 'corrective':
-        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'inspection':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-200';
     }

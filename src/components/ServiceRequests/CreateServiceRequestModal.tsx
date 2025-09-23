@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { X, AlertTriangle } from 'lucide-react';
+import { X, AlertTriangle, FileText } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 
-interface CreateComplaintModalProps {
+interface CreateServiceRequestModalProps {
   onClose: () => void;
   onCreate: () => void;
 }
 
-const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, onCreate }) => {
+const CreateServiceRequestModal: React.FC<CreateServiceRequestModalProps> = ({ onClose, onCreate }) => {
   const { createComplaint } = useData();
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -35,7 +35,7 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
       });
       onCreate();
     } catch (error) {
-      console.error('Error creating complaint:', error);
+      console.error('Error creating service request:', error);
     } finally {
       setLoading(false);
     }
@@ -50,7 +50,12 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h2 className="text-xl font-semibold text-gray-900">Create New Complaint</h2>
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-600 p-2 rounded-lg">
+              <FileText className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900">Create New Service Request</h2>
+          </div>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -71,7 +76,7 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
               name="title"
               required
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Brief description of the issue"
+              placeholder="Brief description of the issue or request"
               value={formData.title}
               onChange={handleInputChange}
             />
@@ -91,11 +96,14 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
               onChange={handleInputChange}
             >
               <option value="general">General</option>
-              <option value="electrical">Electrical</option>
-              <option value="plumbing">Plumbing</option>
-              <option value="hvac">HVAC</option>
+              <option value="electrical">Electrical (Asset-related)</option>
+              <option value="plumbing">Plumbing (Asset-related)</option>
+              <option value="hvac">HVAC (Asset-related)</option>
               <option value="housekeeping">Housekeeping</option>
             </select>
+            <p className="text-xs text-gray-500 mt-1">
+              Asset-related categories can be converted to Work Orders
+            </p>
           </div>
 
           {/* Assigned Team */}
@@ -165,7 +173,7 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
               required
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              placeholder="Please provide detailed information about the issue..."
+              placeholder="Please provide detailed information about the issue or request..."
               value={formData.description}
               onChange={handleInputChange}
             />
@@ -196,7 +204,7 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
               disabled={loading}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Creating...' : 'Create Complaint'}
+              {loading ? 'Creating...' : 'Create Service Request'}
             </button>
           </div>
         </form>
@@ -205,4 +213,4 @@ const CreateComplaintModal: React.FC<CreateComplaintModalProps> = ({ onClose, on
   );
 };
 
-export default CreateComplaintModal;
+export default CreateServiceRequestModal;

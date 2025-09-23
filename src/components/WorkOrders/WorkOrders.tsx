@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Filter, Search, Calendar, Clock } from 'lucide-react';
+import { Plus, Filter, Search, Calendar, Clock, Wrench } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import WorkOrderCard from './WorkOrderCard';
@@ -41,13 +41,14 @@ const WorkOrders = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+            <Wrench className="h-8 w-8 mr-3 text-blue-600" />
             {user?.role === 'technician' || user?.role === 'hk_team' ? 'My Work Orders' : 'Work Orders'}
           </h1>
           <p className="text-gray-600">
             {user?.role === 'technician' || user?.role === 'hk_team'
-              ? 'Your assigned tasks and maintenance work'
-              : 'Manage facility maintenance work orders and tasks'
+              ? 'Your assigned asset maintenance and PPM tasks'
+              : 'Manage asset-related maintenance work orders (PPM, breakdowns, inspections)'
             }
           </p>
         </div>
@@ -123,9 +124,9 @@ const WorkOrders = () => {
             className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           >
             <option value="all">All Types</option>
-            <option value="complaint">Complaint</option>
-            <option value="preventive">Preventive</option>
             <option value="corrective">Corrective</option>
+            <option value="preventive">Preventive</option>
+            <option value="inspection">Inspection</option>
           </select>
         </div>
       </div>
@@ -143,8 +144,8 @@ const WorkOrders = () => {
               {searchTerm || statusFilter !== 'all' || typeFilter !== 'all'
                 ? 'Try adjusting your filters to see more results.'
                 : user?.role === 'technician' || user?.role === 'hk_team'
-                ? 'No work orders have been assigned to you yet.'
-                : 'No work orders have been created yet.'
+                ? 'No asset maintenance work orders have been assigned to you yet.'
+                : 'No asset maintenance work orders have been created yet.'
               }
             </p>
           </div>
