@@ -23,6 +23,9 @@ const Header = () => {
   const [expandedCities, setExpandedCities] = React.useState<string[]>([]);
   const [showDropdown, setShowDropdown] = React.useState(false);
 
+  // Notifications dropdown
+  const [showNotifications, setShowNotifications] = React.useState(false);
+
   // Example hierarchical data
   const companies = [
     {
@@ -169,8 +172,8 @@ const Header = () => {
                                     <button
                                       key={office}
                                       onClick={() => {
-                                        setSelectedOffice(office); // only office name
-                                        setShowDropdown(false); // close dropdown
+                                        setSelectedOffice(office);
+                                        setShowDropdown(false);
                                       }}
                                       className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
                                     >
@@ -189,7 +192,10 @@ const Header = () => {
 
           {/* Notifications */}
           <div className="relative">
-            <button className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative">
+            <button
+              className="p-2 text-gray-400 hover:text-gray-500 hover:bg-gray-100 rounded-full transition-colors relative"
+              onClick={() => setShowNotifications(!showNotifications)}
+            >
               <Bell className="h-5 w-5" />
               {unreadNotifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
@@ -197,6 +203,24 @@ const Header = () => {
                 </span>
               )}
             </button>
+
+            {showNotifications && (
+              <div className="absolute right-0 mt-2 w-72 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-80 overflow-y-auto">
+                {unreadNotifications.length === 0 ? (
+                  <p className="p-4 text-sm text-gray-500">No new notifications</p>
+                ) : (
+                  unreadNotifications.map((n) => (
+                    <div
+                      key={n.id}
+                      className="px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    >
+                      <p>{n.message}</p>
+                      <p className="text-xs text-gray-400">{n.timestamp}</p>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
           {/* User Menu */}
