@@ -153,11 +153,11 @@ const Sidebar = () => {
       <MobileMenuButton />
       <MobileOverlay />
       
-      <div className={`bg-white min-h-screen shadow-lg border-r border-gray-200 ${sidebarWidth} ${mobileClasses} transition-all duration-300`}>
+      <div className={`bg-white h-full shadow-lg border-r border-gray-200 ${sidebarWidth} ${mobileClasses} transition-all duration-300 flex flex-col`}>
         <CollapseButton />
         
         {/* Header */}
-        <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200">
+        <div className="flex items-center justify-center h-16 px-4 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="bg-blue-600 p-2 rounded-lg flex-shrink-0">
               <Building2 className="h-6 w-6 text-white" />
@@ -171,8 +171,8 @@ const Sidebar = () => {
           </div>
         </div>
 
-        {/* Navigation */}
-        <nav className="mt-8 px-4">
+        {/* Navigation - Now takes remaining space */}
+        <nav className="flex-1 mt-6 px-4 pb-4 overflow-y-auto">
           <div className="space-y-2">
             {navItems.map((item) => (
               <NavLink
@@ -204,26 +204,14 @@ const Sidebar = () => {
           </div>
         </nav>
 
-        {/* User info */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <span className="text-sm font-medium text-blue-600">
-                {user?.name.charAt(0).toUpperCase()}
-              </span>
-            </div>
-            {(!isCollapsed || isMobile) && (
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
-                  {user?.name}
-                </p>
-                <p className="text-xs text-gray-500 capitalize">
-                  {user?.role.replace('_', ' ')}
-                </p>
-              </div>
-            )}
+        {/* Optional: Small branding footer (only visible when expanded) */}
+        {(!isCollapsed || isMobile) && (
+          <div className="flex-shrink-0 px-4 py-3 border-t border-gray-100">
+            <p className="text-xs text-gray-400 text-center">
+              © 2024 FM CRM
+            </p>
           </div>
-        </div>
+        )}
       </div>
     </>
   );
