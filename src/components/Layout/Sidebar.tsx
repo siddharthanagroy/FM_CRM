@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, ClipboardList, Package, Building2, Users,
   Settings, BarChart3, Shield, Wrench, Menu, X, ChevronLeft, ChevronRight,
-  CheckSquare, Truck
+  CheckSquare, Truck, Recycle
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -35,6 +35,7 @@ const Sidebar = () => {
         { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
         { icon: Truck, label: 'Vendors', path: '/vendors' },
+        { icon: Recycle, label: 'Waste Management', path: '/waste-management' },
         { icon: Users, label: 'Users', path: '/users' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
         { icon: Settings, label: 'Settings', path: '/settings' },
@@ -47,6 +48,7 @@ const Sidebar = () => {
         { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
         { icon: Truck, label: 'Vendors', path: '/vendors' },
+        { icon: Recycle, label: 'Waste Management', path: '/waste-management' },
         { icon: BarChart3, label: 'Reports', path: '/reports' },
       ],
       technician: [
@@ -59,6 +61,7 @@ const Sidebar = () => {
         { icon: Wrench, label: 'Work Orders', path: '/work-orders' },
         { icon: ClipboardList, label: 'My Service Orders', path: '/service-orders' },
         { icon: CheckSquare, label: 'My Checklists', path: '/checklists' },
+        { icon: Recycle, label: 'Waste Tracking', path: '/waste-management' },
       ],
       end_user: [
         { icon: FileText, label: 'My Service Requests', path: '/service-requests' },

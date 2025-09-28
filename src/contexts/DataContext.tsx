@@ -124,6 +124,62 @@ export interface ChecklistExecution {
   startedAt?: string;
 }
 
+export interface WasteEntry {
+  id: string;
+  entryId: string;
+  date: string;
+  location: string;
+  building?: string;
+  department?: string;
+  wasteCategory: 'general' | 'recyclables' | 'hazardous' | 'e-waste' | 'food' | 'biomedical' | 'organic' | 'paper' | 'plastic' | 'metal' | 'glass';
+  wasteSubcategory?: string;
+  quantity: number; // in kg
+  unit: 'kg' | 'tonnes' | 'liters' | 'pieces';
+  disposalMethod: 'landfill' | 'recycle' | 'reuse' | 'waste-to-energy' | 'incineration' | 'composting' | 'treatment';
+  vendor?: string;
+  vendorReference?: string;
+  revenue?: number; // revenue generated from this waste (if any)
+  expense?: number; // cost incurred for disposal
+  currency: string;
+  carbonFootprint?: number; // CO2 equivalent in kg
+  notes?: string;
+  enteredBy: string;
+  verifiedBy?: string;
+  isVerified: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WasteVendor {
+  id: string;
+  vendorId: string;
+  name: string;
+  type: 'collection' | 'recycling' | 'disposal' | 'treatment' | 'waste-to-energy';
+  contactPerson: string;
+  email: string;
+  phone: string;
+  address: string;
+  wasteCategories: string[];
+  certifications: string[];
+  contractStartDate: string;
+  contractEndDate: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WasteTarget {
+  id: string;
+  year: number;
+  diversionRate: number; // target % of waste diverted from landfill
+  recyclingRate: number; // target % of waste recycled
+  wasteReduction: number; // target % reduction in total waste
+  revenueTarget?: number; // target revenue from waste
+  carbonReduction?: number; // target CO2 reduction in kg
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Asset {
   id: string;
   assetId: string;
@@ -169,6 +225,9 @@ interface DataContextType {
   notifications: Notification[];
   checklists: Checklist[];
   checklistExecutions: ChecklistExecution[];
+  wasteEntries: WasteEntry[];
+  wasteVendors: WasteVendor[];
+  wasteTargets: WasteTarget[];
   createComplaint: (complaint: Omit<Complaint, 'id' | 'ticketId' | 'createdAt' | 'updatedAt' | 'status'>) => void;
   updateComplaint: (id: string, updates: Partial<Complaint>) => void;
   bulkImportComplaints: (complaints: any[]) => void;
@@ -187,6 +246,27 @@ interface DataContextType {
   deleteChecklist: (id: string) => void;
   createChecklistExecution: (execution: Omit<ChecklistExecution, 'id' | 'executionId' | 'createdAt' | 'updatedAt' | 'status'>) => void;
   updateChecklistExecution: (id: string, updates: Partial<ChecklistExecution>) => void;
+  createWasteEntry: (entry: Omit<WasteEntry, 'id' | 'entryId' | 'createdAt' | 'updatedAt' | 'isVerified'>) => void;
+  updateWasteEntry: (id: string, updates: Partial<WasteEntry>) => void;
+  deleteWasteEntry: (id: string) => void;
+  bulkImportWasteEntries: (entries: any[]) => void;
+  createWasteVendor: (vendor: Omit<WasteVendor, 'id' | 'vendorId' | 'createdAt' | 'updatedAt'>) => void;
+  updateWasteVendor: (id: string, updates: Partial<WasteVendor>) => void;
+  deleteWasteVendor: (id: string) => void;
+  createWasteTarget: (target: Omit<WasteTarget, 'id' | 'createdAt' | 'updatedAt'>) => void;
+  updateWasteTarget: (id: string, updates: Partial<WasteTarget>) => void;
+  getWasteMetrics: (startDate?: string, endDate?: string) => {
+    totalWaste: number;
+    diversionRate: number;
+    recyclingRate: number;
+    wasteToEnergyRate: number;
+    landfillRate: number;
+    totalRevenue: number;
+    totalExpense: number;
+    netValue: number;
+    carbonFootprint: number;
+    avoidedLandfill: number;
+  };
   markNotificationAsRead: (id: string) => void;
   getUnreadNotifications: () => Notification[];
 }
@@ -235,6 +315,19 @@ const generateExecutionId = (): string => {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
   return `EXE-${year}-${month}-${sequence}`;
+};
+
+const generateWasteEntryId = (): string => {
+  const date = new Date();
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const sequence = String(Math.floor(Math.random() * 9999) + 1).padStart(4, '0');
+  return `WE-${year}-${month}-${sequence}`;
+};
+
+const generateWasteVendorId = (): string => {
+  const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+  return `WV-${sequence}`;
 };
 
 const generateAssetId = (): string => {
@@ -541,6 +634,135 @@ const mockChecklistExecutions: ChecklistExecution[] = [
   },
 ];
 
+// Mock waste data
+const mockWasteEntries: WasteEntry[] = [
+  {
+    id: '1',
+    entryId: 'WE-2024-01-001',
+    date: '2024-01-15',
+    location: 'Building A - Floor 1',
+    building: 'Building A',
+    department: 'Administration',
+    wasteCategory: 'paper',
+    wasteSubcategory: 'Office Paper',
+    quantity: 150,
+    unit: 'kg',
+    disposalMethod: 'recycle',
+    vendor: 'EcoRecycle Solutions',
+    vendorReference: 'ERS-2024-001',
+    revenue: 45,
+    expense: 0,
+    currency: 'USD',
+    carbonFootprint: 12.5,
+    notes: 'Monthly office paper collection',
+    enteredBy: 'FM Manager',
+    isVerified: true,
+    verifiedBy: 'John Technician',
+    createdAt: '2024-01-15T10:00:00Z',
+    updatedAt: '2024-01-15T10:00:00Z',
+  },
+  {
+    id: '2',
+    entryId: 'WE-2024-01-002',
+    date: '2024-01-14',
+    location: 'Cafeteria',
+    building: 'Building A',
+    department: 'Food Services',
+    wasteCategory: 'food',
+    wasteSubcategory: 'Food Scraps',
+    quantity: 85,
+    unit: 'kg',
+    disposalMethod: 'composting',
+    vendor: 'Green Compost Co',
+    vendorReference: 'GCC-2024-002',
+    revenue: 0,
+    expense: 25,
+    currency: 'USD',
+    carbonFootprint: 8.2,
+    notes: 'Daily food waste from cafeteria',
+    enteredBy: 'Sarah Housekeeping',
+    isVerified: true,
+    verifiedBy: 'FM Manager',
+    createdAt: '2024-01-14T16:00:00Z',
+    updatedAt: '2024-01-14T16:00:00Z',
+  },
+  {
+    id: '3',
+    entryId: 'WE-2024-01-003',
+    date: '2024-01-13',
+    location: 'IT Department',
+    building: 'Building B',
+    department: 'Information Technology',
+    wasteCategory: 'e-waste',
+    wasteSubcategory: 'Computer Equipment',
+    quantity: 25,
+    unit: 'pieces',
+    disposalMethod: 'recycle',
+    vendor: 'TechRecycle Pro',
+    vendorReference: 'TRP-2024-003',
+    revenue: 125,
+    expense: 15,
+    currency: 'USD',
+    carbonFootprint: 45.8,
+    notes: 'Old computers and monitors disposal',
+    enteredBy: 'John Technician',
+    isVerified: false,
+    createdAt: '2024-01-13T14:00:00Z',
+    updatedAt: '2024-01-13T14:00:00Z',
+  },
+];
+
+const mockWasteVendors: WasteVendor[] = [
+  {
+    id: '1',
+    vendorId: 'WV-001',
+    name: 'EcoRecycle Solutions',
+    type: 'recycling',
+    contactPerson: 'Mike Green',
+    email: 'mike@ecorecycle.com',
+    phone: '+1-555-0101',
+    address: '123 Green Street, Eco City, EC 12345',
+    wasteCategories: ['paper', 'plastic', 'metal', 'glass'],
+    certifications: ['ISO 14001', 'R2 Certified'],
+    contractStartDate: '2023-01-01',
+    contractEndDate: '2024-12-31',
+    isActive: true,
+    createdAt: '2023-01-01T08:00:00Z',
+    updatedAt: '2023-01-01T08:00:00Z',
+  },
+  {
+    id: '2',
+    vendorId: 'WV-002',
+    name: 'Green Compost Co',
+    type: 'treatment',
+    contactPerson: 'Sarah Compost',
+    email: 'sarah@greencompost.com',
+    phone: '+1-555-0102',
+    address: '456 Organic Lane, Green Valley, GV 67890',
+    wasteCategories: ['food', 'organic'],
+    certifications: ['USCC Certified', 'Organic Certified'],
+    contractStartDate: '2023-06-01',
+    contractEndDate: '2025-05-31',
+    isActive: true,
+    createdAt: '2023-06-01T08:00:00Z',
+    updatedAt: '2023-06-01T08:00:00Z',
+  },
+];
+
+const mockWasteTargets: WasteTarget[] = [
+  {
+    id: '1',
+    year: 2024,
+    diversionRate: 75, // 75% diversion from landfill
+    recyclingRate: 60, // 60% recycling rate
+    wasteReduction: 10, // 10% reduction in total waste
+    revenueTarget: 5000, // $5000 revenue target
+    carbonReduction: 500, // 500kg CO2 reduction
+    createdAt: '2024-01-01T08:00:00Z',
+    updatedAt: '2024-01-01T08:00:00Z',
+  },
+];
+
 export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [complaints, setComplaints] = useState<Complaint[]>(mockComplaints);
   const [assets, setAssets] = useState<Asset[]>(mockAssets);
@@ -550,6 +772,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [checklists, setChecklists] = useState<Checklist[]>(mockChecklists);
   const [checklistExecutions, setChecklistExecutions] = useState<ChecklistExecution[]>(mockChecklistExecutions);
+  const [wasteEntries, setWasteEntries] = useState<WasteEntry[]>(mockWasteEntries);
+  const [wasteVendors, setWasteVendors] = useState<WasteVendor[]>(mockWasteVendors);
+  const [wasteTargets, setWasteTargets] = useState<WasteTarget[]>(mockWasteTargets);
 
   const createComplaint = (complaintData: Omit<Complaint, 'id' | 'ticketId' | 'createdAt' | 'updatedAt' | 'status'>) => {
     const newComplaint: Complaint = {
@@ -807,6 +1032,166 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
     ));
   };
 
+  const createWasteEntry = (entryData: Omit<WasteEntry, 'id' | 'entryId' | 'createdAt' | 'updatedAt' | 'isVerified'>) => {
+    const newEntry: WasteEntry = {
+      ...entryData,
+      id: Date.now().toString(),
+      entryId: generateWasteEntryId(),
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setWasteEntries(prev => [newEntry, ...prev]);
+
+    // Create notification for new waste entry
+    const notification: Notification = {
+      id: Date.now().toString() + '_waste',
+      type: 'system',
+      title: 'New Waste Entry Created',
+      message: `New ${entryData.wasteCategory} waste entry: ${entryData.quantity}${entryData.unit} at ${entryData.location}`,
+      priority: 'medium',
+      userRole: 'fm_manager',
+      isRead: false,
+      createdAt: new Date().toISOString(),
+      relatedId: newEntry.id,
+      relatedType: 'waste_entry',
+    };
+    setNotifications(prev => [notification, ...prev]);
+  };
+
+  const updateWasteEntry = (id: string, updates: Partial<WasteEntry>) => {
+    setWasteEntries(prev => prev.map(entry => 
+      entry.id === id 
+        ? { ...entry, ...updates, updatedAt: new Date().toISOString() }
+        : entry
+    ));
+  };
+
+  const deleteWasteEntry = (id: string) => {
+    setWasteEntries(prev => prev.filter(entry => entry.id !== id));
+  };
+
+  const bulkImportWasteEntries = (entriesData: any[]) => {
+    const newEntries = entriesData.map(data => ({
+      ...data,
+      id: Date.now().toString() + Math.random().toString(),
+      entryId: generateWasteEntryId(),
+      isVerified: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    setWasteEntries(prev => [...newEntries, ...prev]);
+  };
+
+  const createWasteVendor = (vendorData: Omit<WasteVendor, 'id' | 'vendorId' | 'createdAt' | 'updatedAt'>) => {
+    const newVendor: WasteVendor = {
+      ...vendorData,
+      id: Date.now().toString(),
+      vendorId: generateWasteVendorId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setWasteVendors(prev => [newVendor, ...prev]);
+  };
+
+  const updateWasteVendor = (id: string, updates: Partial<WasteVendor>) => {
+    setWasteVendors(prev => prev.map(vendor => 
+      vendor.id === id 
+        ? { ...vendor, ...updates, updatedAt: new Date().toISOString() }
+        : vendor
+    ));
+  };
+
+  const deleteWasteVendor = (id: string) => {
+    setWasteVendors(prev => prev.filter(vendor => vendor.id !== id));
+  };
+
+  const createWasteTarget = (targetData: Omit<WasteTarget, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const newTarget: WasteTarget = {
+      ...targetData,
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setWasteTargets(prev => [newTarget, ...prev]);
+  };
+
+  const updateWasteTarget = (id: string, updates: Partial<WasteTarget>) => {
+    setWasteTargets(prev => prev.map(target => 
+      target.id === id 
+        ? { ...target, ...updates, updatedAt: new Date().toISOString() }
+        : target
+    ));
+  };
+
+  const getWasteMetrics = (startDate?: string, endDate?: string) => {
+    let filteredEntries = wasteEntries;
+    
+    if (startDate && endDate) {
+      filteredEntries = wasteEntries.filter(entry => {
+        const entryDate = new Date(entry.date);
+        return entryDate >= new Date(startDate) && entryDate <= new Date(endDate);
+      });
+    }
+
+    const totalWaste = filteredEntries.reduce((sum, entry) => {
+      // Convert all to kg for consistency
+      let weightInKg = entry.quantity;
+      if (entry.unit === 'tonnes') weightInKg *= 1000;
+      return sum + weightInKg;
+    }, 0);
+
+    const landfillWaste = filteredEntries
+      .filter(entry => entry.disposalMethod === 'landfill')
+      .reduce((sum, entry) => {
+        let weightInKg = entry.quantity;
+        if (entry.unit === 'tonnes') weightInKg *= 1000;
+        return sum + weightInKg;
+      }, 0);
+
+    const recycledWaste = filteredEntries
+      .filter(entry => entry.disposalMethod === 'recycle')
+      .reduce((sum, entry) => {
+        let weightInKg = entry.quantity;
+        if (entry.unit === 'tonnes') weightInKg *= 1000;
+        return sum + weightInKg;
+      }, 0);
+
+    const wasteToEnergyWaste = filteredEntries
+      .filter(entry => entry.disposalMethod === 'waste-to-energy')
+      .reduce((sum, entry) => {
+        let weightInKg = entry.quantity;
+        if (entry.unit === 'tonnes') weightInKg *= 1000;
+        return sum + weightInKg;
+      }, 0);
+
+    const divertedWaste = totalWaste - landfillWaste;
+    const diversionRate = totalWaste > 0 ? (divertedWaste / totalWaste) * 100 : 0;
+    const recyclingRate = totalWaste > 0 ? (recycledWaste / totalWaste) * 100 : 0;
+    const wasteToEnergyRate = totalWaste > 0 ? (wasteToEnergyWaste / totalWaste) * 100 : 0;
+    const landfillRate = totalWaste > 0 ? (landfillWaste / totalWaste) * 100 : 0;
+
+    const totalRevenue = filteredEntries.reduce((sum, entry) => sum + (entry.revenue || 0), 0);
+    const totalExpense = filteredEntries.reduce((sum, entry) => sum + (entry.expense || 0), 0);
+    const netValue = totalRevenue - totalExpense;
+
+    const carbonFootprint = filteredEntries.reduce((sum, entry) => sum + (entry.carbonFootprint || 0), 0);
+    const avoidedLandfill = divertedWaste;
+
+    return {
+      totalWaste: Math.round(totalWaste * 100) / 100,
+      diversionRate: Math.round(diversionRate * 100) / 100,
+      recyclingRate: Math.round(recyclingRate * 100) / 100,
+      wasteToEnergyRate: Math.round(wasteToEnergyRate * 100) / 100,
+      landfillRate: Math.round(landfillRate * 100) / 100,
+      totalRevenue: Math.round(totalRevenue * 100) / 100,
+      totalExpense: Math.round(totalExpense * 100) / 100,
+      netValue: Math.round(netValue * 100) / 100,
+      carbonFootprint: Math.round(carbonFootprint * 100) / 100,
+      avoidedLandfill: Math.round(avoidedLandfill * 100) / 100,
+    };
+  };
+
   const markNotificationAsRead = (id: string) => {
     setNotifications(prev => prev.map(notification => 
       notification.id === id 
@@ -862,6 +1247,9 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       notifications,
       checklists,
       checklistExecutions,
+      wasteEntries,
+      wasteVendors,
+      wasteTargets,
       createComplaint,
       updateComplaint,
       bulkImportComplaints,
@@ -880,6 +1268,16 @@ export const DataProvider = ({ children }: { children: ReactNode }) => {
       deleteChecklist,
       createChecklistExecution,
       updateChecklistExecution,
+      createWasteEntry,
+      updateWasteEntry,
+      deleteWasteEntry,
+      bulkImportWasteEntries,
+      createWasteVendor,
+      updateWasteVendor,
+      deleteWasteVendor,
+      createWasteTarget,
+      updateWasteTarget,
+      getWasteMetrics,
       markNotificationAsRead,
       getUnreadNotifications,
     }}>
