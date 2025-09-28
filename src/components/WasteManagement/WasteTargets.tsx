@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Target, TrendingUp, Edit, Trash2 } from 'lucide-react';
+import { Plus, Target, TrendingUp, CreditCard as Edit, Trash2 } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
 import CreateWasteTargetModal from './CreateWasteTargetModal';
