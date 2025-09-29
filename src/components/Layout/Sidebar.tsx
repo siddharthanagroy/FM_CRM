@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { 
   LayoutDashboard, FileText, ClipboardList, Package, Building2, Users,
   Settings, BarChart3, Shield, Wrench, Menu, X, ChevronLeft, ChevronRight,
-  CheckSquare, Truck, Recycle
+  CheckSquare, Truck, Recycle, Map
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
@@ -31,6 +31,7 @@ const Sidebar = () => {
         { icon: FileText, label: 'Service Requests', path: '/service-requests' },
         { icon: Wrench, label: 'Work Orders', path: '/work-orders' },
         { icon: ClipboardList, label: 'Service Orders', path: '/service-orders' },
+        { icon: Map, label: 'Portfolio', path: '/portfolio' },
         { icon: Package, label: 'Assets', path: '/assets' },
         { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },
@@ -44,6 +45,7 @@ const Sidebar = () => {
         { icon: FileText, label: 'Service Requests', path: '/service-requests' },
         { icon: Wrench, label: 'Work Orders', path: '/work-orders' },
         { icon: ClipboardList, label: 'Service Orders', path: '/service-orders' },
+        { icon: Map, label: 'Portfolio', path: '/portfolio' },
         { icon: Package, label: 'Assets', path: '/assets' },
         { icon: Shield, label: 'PPM / Compliance', path: '/compliances' },
         { icon: CheckSquare, label: 'Checklists', path: '/checklists' },

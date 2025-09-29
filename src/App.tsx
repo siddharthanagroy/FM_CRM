@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { DataProvider } from './contexts/DataContext';
+import { PortfolioProvider } from './contexts/PortfolioContext';
 import Login from './components/Auth/Login';
 import Dashboard from './components/Dashboard/Dashboard';
 import ServiceRequests from './components/ServiceRequests/ServiceRequests';
@@ -11,6 +12,7 @@ import Assets from './components/Assets/Assets';
 import Compliances from './components/Compliances/Compliances';
 import Checklists from './components/Checklists/Checklists';
 import WasteManagement from './components/WasteManagement/WasteManagement';
+import Portfolio from './components/Portfolio/Portfolio';
 import Layout from './components/Layout/Layout';
 import './App.css';
 
@@ -38,6 +40,7 @@ function AppRoutes() {
         <Route path="/assets" element={<Assets />} />
         <Route path="/compliances" element={<Compliances />} />
         <Route path="/checklists" element={<Checklists />} />
+        <Route path="/portfolio" element={<Portfolio />} />
         <Route path="/waste-management" element={<WasteManagement />} />
         <Route path="*" element={<Navigate to="/" />} />
       </Routes>
@@ -48,13 +51,15 @@ function AppRoutes() {
 function App() {
   return (
     <AuthProvider>
-      <DataProvider>
-        <Router>
+      <PortfolioProvider>
+        <DataProvider>
+          <Router>
           <div className="App">
             <AppRoutes />
           </div>
         </Router>
-      </DataProvider>
+        </DataProvider>
+      </PortfolioProvider>
     </AuthProvider>
   );
 }
