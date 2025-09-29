@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, ChevronRight, Building2, MapPin, Home, Layers, Users, Edit, Trash2, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, Building2, MapPin, Home, Layers, Users, CreditCard as Edit, Trash2, Plus } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { useAuth } from '../../contexts/AuthContext';
 
