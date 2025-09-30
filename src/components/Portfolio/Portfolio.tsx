@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3, Building } from 'lucide-react';
+import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3 } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { useAuth } from '../../contexts/AuthContext';
 import PortfolioHierarchy from './PortfolioHierarchy';
@@ -33,10 +33,8 @@ const Portfolio = () => {
 
   const canManage = user?.role === 'admin' || user?.role === 'fm_manager';
 
-  // Search results
   const searchResults = searchTerm ? searchEntities(searchTerm, entityFilter === 'all' ? undefined : entityFilter) : [];
 
-  // Export functionality
   const handleExport = (entityType: string) => {
     let data: any[] = [];
     let filename = '';
@@ -81,7 +79,6 @@ const Portfolio = () => {
     document.body.removeChild(link);
   };
 
-  // Calculate summary statistics
   const stats = {
     totalOrganizations: organizations.length,
     totalPortfolios: portfolios.length,
@@ -98,61 +95,57 @@ const Portfolio = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        {/* Left side */}
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold text-gray-900 flex items-center">
             <Building2 className="h-8 w-8 mr-3 text-blue-600" />
             Portfolio Management
           </h1>
-          <p className="text-gray-600">
+          <p className="text-gray-600 truncate">
             Master data layer for organizations, portfolios, campuses, buildings, and floors
           </p>
         </div>
 
-        <div className="flex items-center space-x-3">
-          {canManage && (
-            <>
-              <button
-                onClick={() => setShowBulkImportModal(true)}
-                className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Bulk Import
-              </button>
+        {/* Right side buttons */}
+        {canManage && (
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={() => setShowBulkImportModal(true)}
+              className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50"
+            >
+              <Upload className="h-4 w-4 mr-2" />
+              Bulk Import
+            </button>
 
-              <div className="relative">
-                <select
-                  onChange={(e) => handleExport(e.target.value)}
-                  className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Export Data</option>
-                  <option value="organizations">Export Organizations</option>
-                  <option value="portfolios">Export Portfolios</option>
-                  <option value="campuses">Export Campuses</option>
-                  <option value="buildings">Export Buildings</option>
-                  <option value="floors">Export Floors</option>
-                  <option value="seatzones">Export Seat Zones</option>
-                </select>
-              </div>
+            <select
+              onChange={(e) => handleExport(e.target.value)}
+              className="flex items-center px-4 py-2 text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              defaultValue=""
+            >
+              <option value="" disabled>Export Data</option>
+              <option value="organizations">Export Organizations</option>
+              <option value="portfolios">Export Portfolios</option>
+              <option value="campuses">Export Campuses</option>
+              <option value="buildings">Export Buildings</option>
+              <option value="floors">Export Floors</option>
+              <option value="seatzones">Export Seat Zones</option>
+            </select>
 
-              <div className="relative">
-                <select
-                  onChange={(e) => setShowCreateModal(e.target.value)}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                  defaultValue=""
-                >
-                  <option value="" disabled>Create New</option>
-                  <option value="organization">Organization</option>
-                  <option value="portfolio">Portfolio</option>
-                  <option value="campus">Campus</option>
-                  <option value="building">Building</option>
-                  <option value="floor">Floor</option>
-                </select>
-              </div>
-            </>
-          )}
-        </div>
+            <select
+              onChange={(e) => setShowCreateModal(e.target.value)}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              defaultValue=""
+            >
+              <option value="" disabled>Create New</option>
+              <option value="organization">Organization</option>
+              <option value="portfolio">Portfolio</option>
+              <option value="campus">Campus</option>
+              <option value="building">Building</option>
+              <option value="floor">Floor</option>
+            </select>
+          </div>
+        )}
       </div>
 
       {/* Summary Stats */}
@@ -247,14 +240,13 @@ const Portfolio = () => {
           </div>
         </div>
 
-        {/* Search Results */}
         {searchTerm && (
           <div className="mt-4 border-t border-gray-200 pt-4">
             <h3 className="text-sm font-medium text-gray-700 mb-2">
               Search Results ({searchResults.length})
             </h3>
             <div className="space-y-2 max-h-60 overflow-y-auto">
-              {searchResults.map((result, index) => (
+              {searchResults.map((result) => (
                 <div
                   key={`${result.entityType}-${result.id}`}
                   className="flex items-center justify-between p-2 bg-gray-50 rounded cursor-pointer hover:bg-gray-100"
@@ -284,51 +276,15 @@ const Portfolio = () => {
         )}
       </div>
 
-      {/* Tab Content */}
       {activeTab === 'hierarchy' && <PortfolioHierarchy />}
       {activeTab === 'dashboard' && <PortfolioDashboard />}
 
-      {/* Modals */}
-      {showCreateModal === 'organization' && (
-        <CreateOrganizationModal
-          onClose={() => setShowCreateModal(null)}
-          onCreate={() => setShowCreateModal(null)}
-        />
-      )}
-
-      {showCreateModal === 'portfolio' && (
-        <CreatePortfolioModal
-          onClose={() => setShowCreateModal(null)}
-          onCreate={() => setShowCreateModal(null)}
-        />
-      )}
-
-      {showCreateModal === 'campus' && (
-        <CreateCampusModal
-          onClose={() => setShowCreateModal(null)}
-          onCreate={() => setShowCreateModal(null)}
-        />
-      )}
-
-      {showCreateModal === 'building' && (
-        <CreateBuildingModal
-          onClose={() => setShowCreateModal(null)}
-          onCreate={() => setShowCreateModal(null)}
-        />
-      )}
-
-      {showCreateModal === 'floor' && (
-        <CreateFloorModal
-          onClose={() => setShowCreateModal(null)}
-          onCreate={() => setShowCreateModal(null)}
-        />
-      )}
-
-      {showBulkImportModal && (
-        <BulkImportModal
-          onClose={() => setShowBulkImportModal(false)}
-        />
-      )}
+      {showCreateModal === 'organization' && <CreateOrganizationModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
+      {showCreateModal === 'portfolio' && <CreatePortfolioModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
+      {showCreateModal === 'campus' && <CreateCampusModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
+      {showCreateModal === 'building' && <CreateBuildingModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
+      {showCreateModal === 'floor' && <CreateFloorModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
+      {showBulkImportModal && <BulkImportModal onClose={() => setShowBulkImportModal(false)} />}
     </div>
   );
 };
