@@ -3,12 +3,17 @@ import { BarChart3, PieChart, TrendingUp, Users, Building, MapPin, Home, Layers 
 import { usePortfolio } from '../../contexts/PortfolioContext';
 
 const PortfolioDashboard = () => {
-  const { portfolios, campuses, buildings, floors, seatZones } = usePortfolio();
+  const { organizations, portfolios, campuses, buildings, floors, seatZones } = usePortfolio();
+  const [selectedOrganization, setSelectedOrganization] = useState<string>('all');
   const [selectedPortfolio, setSelectedPortfolio] = useState<string>('all');
 
-  // Filter data based on selected portfolio
+  // Filter data based on selected organization and portfolio
+  const filteredPortfolios = selectedOrganization === 'all' 
+    ? portfolios 
+    : portfolios.filter(p => p.organizationId === selectedOrganization);
+
   const filteredCampuses = selectedPortfolio === 'all' 
-    ? campuses 
+    ? campuses.filter(c => filteredPortfolios.some(p => p.id === c.portfolioId))
     : campuses.filter(c => c.portfolioId === selectedPortfolio);
   
   const filteredBuildings = buildings.filter(b => 
@@ -25,6 +30,8 @@ const PortfolioDashboard = () => {
 
   // Calculate metrics
   const metrics = {
+    totalOrganizations: organizations.length,
+    totalPortfolios: filteredPortfolios.length,
     totalCampuses: filteredCampuses.length,
     activeCampuses: filteredCampuses.filter(c => c.status === 'active').length,
     totalBuildings: filteredBuildings.length,
@@ -86,6 +93,15 @@ const PortfolioDashboard = () => {
     }).format(amount);
   };
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
   // Calculate lease costs
   const totalLeaseValue = filteredBuildings
     .filter(b => b.ownershipType === 'leased' && b.leaseDetails)
@@ -93,27 +109,69 @@ const PortfolioDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Portfolio Filter */}
+      {/* Organization and Portfolio Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-        <div className="flex items-center space-x-4">
-          <label className="text-sm font-medium text-gray-700">Filter by Portfolio:</label>
-          <select
-            value={selectedPortfolio}
-            onChange={(e) => setSelectedPortfolio(e.target.value)}
-            className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          >
-            <option value="all">All Portfolios</option>
-            {portfolios.map((portfolio) => (
-              <option key={portfolio.id} value={portfolio.id}>
-                {portfolio.name} ({portfolio.region})
-              </option>
-            ))}
-          </select>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Organization:</label>
+            <select
+              value={selectedOrganization}
+              onChange={(e) => {
+                setSelectedOrganization(e.target.value);
+                setSelectedPortfolio('all');
+              }}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Organizations</option>
+              {organizations.map((organization) => (
+                <option key={organization.id} value={organization.id}>
+                  {organization.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <label className="text-sm font-medium text-gray-700">Portfolio:</label>
+            <select
+              value={selectedPortfolio}
+              onChange={(e) => setSelectedPortfolio(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="all">All Portfolios</option>
+              {filteredPortfolios.map((portfolio) => (
+                <option key={portfolio.id} value={portfolio.id}>
+                  {portfolio.name} ({portfolio.region})
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Key Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Organizations</p>
+              <p className="text-3xl font-bold text-indigo-600">{metrics.totalOrganizations}</p>
+              <p className="text-sm text-gray-500">Total orgs</p>
+            </div>
+            <Building className="h-8 w-8 text-indigo-400" />
+          </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-600">Portfolios</p>
+              <p className="text-3xl font-bold text-blue-600">{metrics.totalPortfolios}</p>
+              <p className="text-sm text-gray-500">Total portfolios</p>
+            </div>
+            <Building2 className="h-8 w-8 text-blue-400" />
+          </div>
+        </div>
         <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
           <div className="flex items-center justify-between">
             <div>

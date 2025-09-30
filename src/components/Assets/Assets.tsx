@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Filter, Download, Package, Table } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import AssetCard from './AssetCard';
 import CreateAssetModal from './CreateAssetModal';
 import Papa from 'papaparse';
@@ -9,14 +10,31 @@ import Papa from 'papaparse';
 const Assets = () => {
   const { assets } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
+
   // Filter assets
   const filteredAssets = assets.filter((asset) => {
+    // Filter by office context if available
+    if (officeContext) {
+      const assetLocation = asset.location.toLowerCase();
+      const buildingName = officeContext.building?.buildingName.toLowerCase();
+      const campusName = officeContext.campus?.name.toLowerCase();
+      
+      // Check if asset location matches selected office context
+      const matchesOffice = buildingName && assetLocation.includes(buildingName) ||
+                           campusName && assetLocation.includes(campusName);
+      
+      if (!matchesOffice) return false;
+    }
+
     const matchesSearch =
       asset.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       asset.assetId.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -81,7 +99,14 @@ const Assets = () => {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Assets</h1>
-          <p className="text-gray-600">Manage facility assets and equipment</p>
+          <p className="text-gray-600">
+            Manage facility assets and equipment
+            {officeContext && (
+              <span className="block text-sm text-blue-600 mt-1">
+                📍 Filtered by: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+              </span>
+            )}
+          </p>
         </div>
 
         <div className="flex items-center space-x-3">

@@ -1,8 +1,20 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
+export interface Organization {
+  id: string;
+  organizationId: string;
+  name: string;
+  description?: string;
+  headquarters?: string;
+  website?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Portfolio {
   id: string;
   portfolioId: string;
+  organizationId: string;
   name: string;
   region: string;
   country: string;
@@ -98,11 +110,17 @@ export interface SeatZone {
 }
 
 interface PortfolioContextType {
+  organizations: Organization[];
   portfolios: Portfolio[];
   campuses: Campus[];
   buildings: Building[];
   floors: Floor[];
   seatZones: SeatZone[];
+  
+  // Organization operations
+  createOrganization: (organization: Omit<Organization, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>) => void;
+  updateOrganization: (id: string, updates: Partial<Organization>) => void;
+  deleteOrganization: (id: string) => void;
   
   // Portfolio operations
   createPortfolio: (portfolio: Omit<Portfolio, 'id' | 'portfolioId' | 'createdAt' | 'updatedAt'>) => void;
@@ -130,13 +148,16 @@ interface PortfolioContextType {
   deleteSeatZone: (id: string) => void;
   
   // Utility functions
+  getOrganizationHierarchy: () => any[];
   getPortfolioHierarchy: () => any[];
+  getPortfoliosByOrganization: (organizationId: string) => Portfolio[];
   getCampusesByPortfolio: (portfolioId: string) => Campus[];
   getBuildingsByCampus: (campusId: string) => Building[];
   getFloorsByBuilding: (buildingId: string) => Floor[];
   getSeatZonesByFloor: (floorId: string) => SeatZone[];
   
   // Bulk operations
+  bulkImportOrganizations: (data: any[]) => void;
   bulkImportPortfolios: (data: any[]) => void;
   bulkImportCampuses: (data: any[]) => void;
   bulkImportBuildings: (data: any[]) => void;
@@ -144,6 +165,10 @@ interface PortfolioContextType {
   
   // Search and filter
   searchEntities: (query: string, entityType?: string) => any[];
+  
+  // Office selection utilities
+  getOfficeHierarchy: (organizationId?: string) => any[];
+  findOfficeByPath: (organizationId: string, portfolioId: string, campusId: string, buildingId: string, floorId?: string) => any;
 }
 
 const PortfolioContext = createContext<PortfolioContextType | undefined>(undefined);
@@ -157,6 +182,11 @@ export const usePortfolio = () => {
 };
 
 // ID Generation Functions
+const generateOrganizationId = (): string => {
+  const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
+  return `ORG-${sequence}`;
+};
+
 const generatePortfolioId = (): string => {
   const sequence = String(Math.floor(Math.random() * 999) + 1).padStart(3, '0');
   return `PF-${sequence}`;
@@ -182,10 +212,34 @@ const generateSeatZoneId = (floorId: string): string => {
 };
 
 // Mock Data
+const mockOrganizations: Organization[] = [
+  {
+    id: '1',
+    organizationId: 'ORG-001',
+    name: 'Subhra Solutions',
+    description: 'Global technology and consulting company',
+    headquarters: 'Bangalore, India',
+    website: 'https://subhrasolutions.com',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '2',
+    organizationId: 'ORG-002',
+    name: 'TechCorp International',
+    description: 'Multinational technology corporation',
+    headquarters: 'London, UK',
+    website: 'https://techcorp.com',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+];
+
 const mockPortfolios: Portfolio[] = [
   {
     id: '1',
     portfolioId: 'PF-001',
+    organizationId: '1',
     name: 'Asia Pacific Portfolio',
     region: 'APAC',
     country: 'India',
@@ -196,10 +250,22 @@ const mockPortfolios: Portfolio[] = [
   {
     id: '2',
     portfolioId: 'PF-002',
+    organizationId: '1',
     name: 'Europe Portfolio',
     region: 'EMEA',
     country: 'United Kingdom',
     countryCode: 'UK',
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '3',
+    portfolioId: 'PF-003',
+    organizationId: '2',
+    name: 'Americas Portfolio',
+    region: 'AMERICAS',
+    country: 'United States',
+    countryCode: 'US',
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-01T00:00:00Z',
   },
@@ -369,11 +435,38 @@ const mockSeatZones: SeatZone[] = [
 ];
 
 export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
+  const [organizations, setOrganizations] = useState<Organization[]>(mockOrganizations);
   const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
   const [campuses, setCampuses] = useState<Campus[]>(mockCampuses);
   const [buildings, setBuildings] = useState<Building[]>(mockBuildings);
   const [floors, setFloors] = useState<Floor[]>(mockFloors);
   const [seatZones, setSeatZones] = useState<SeatZone[]>(mockSeatZones);
+
+  // Organization operations
+  const createOrganization = (organizationData: Omit<Organization, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>) => {
+    const newOrganization: Organization = {
+      ...organizationData,
+      id: Date.now().toString(),
+      organizationId: generateOrganizationId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    setOrganizations(prev => [newOrganization, ...prev]);
+  };
+
+  const updateOrganization = (id: string, updates: Partial<Organization>) => {
+    setOrganizations(prev => prev.map(organization => 
+      organization.id === id 
+        ? { ...organization, ...updates, updatedAt: new Date().toISOString() }
+        : organization
+    ));
+  };
+
+  const deleteOrganization = (id: string) => {
+    setOrganizations(prev => prev.filter(organization => organization.id !== id));
+    // Also delete related portfolios
+    setPortfolios(prev => prev.filter(portfolio => portfolio.organizationId !== id));
+  };
 
   // Portfolio operations
   const createPortfolio = (portfolioData: Omit<Portfolio, 'id' | 'portfolioId' | 'createdAt' | 'updatedAt'>) => {
@@ -527,6 +620,25 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Utility functions
+  const getOrganizationHierarchy = () => {
+    return organizations.map(organization => ({
+      ...organization,
+      portfolios: portfolios.filter(portfolio => portfolio.organizationId === organization.id).map(portfolio => ({
+        ...portfolio,
+        campuses: campuses.filter(campus => campus.portfolioId === portfolio.id).map(campus => ({
+          ...campus,
+          buildings: buildings.filter(building => building.campusId === campus.id).map(building => ({
+            ...building,
+            floors: floors.filter(floor => floor.buildingId === building.id).map(floor => ({
+              ...floor,
+              seatZones: seatZones.filter(seatZone => seatZone.floorId === floor.id),
+            })),
+          })),
+        })),
+      })),
+    }));
+  };
+
   const getPortfolioHierarchy = () => {
     return portfolios.map(portfolio => ({
       ...portfolio,
@@ -541,6 +653,10 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
         })),
       })),
     }));
+  };
+
+  const getPortfoliosByOrganization = (organizationId: string) => {
+    return portfolios.filter(portfolio => portfolio.organizationId === organizationId);
   };
 
   const getCampusesByPortfolio = (portfolioId: string) => {
@@ -559,7 +675,55 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     return seatZones.filter(seatZone => seatZone.floorId === floorId);
   };
 
+  const getOfficeHierarchy = (organizationId?: string) => {
+    const filteredOrganizations = organizationId 
+      ? organizations.filter(org => org.id === organizationId)
+      : organizations;
+
+    return filteredOrganizations.map(organization => ({
+      ...organization,
+      portfolios: portfolios.filter(portfolio => portfolio.organizationId === organization.id).map(portfolio => ({
+        ...portfolio,
+        campuses: campuses.filter(campus => campus.portfolioId === portfolio.id).map(campus => ({
+          ...campus,
+          buildings: buildings.filter(building => building.campusId === campus.id).map(building => ({
+            ...building,
+            floors: floors.filter(floor => floor.buildingId === building.id),
+          })),
+        })),
+      })),
+    }));
+  };
+
+  const findOfficeByPath = (organizationId: string, portfolioId: string, campusId: string, buildingId: string, floorId?: string) => {
+    const organization = organizations.find(org => org.id === organizationId);
+    const portfolio = portfolios.find(p => p.id === portfolioId && p.organizationId === organizationId);
+    const campus = campuses.find(c => c.id === campusId && c.portfolioId === portfolioId);
+    const building = buildings.find(b => b.id === buildingId && b.campusId === campusId);
+    const floor = floorId ? floors.find(f => f.id === floorId && f.buildingId === buildingId) : null;
+
+    return {
+      organization,
+      portfolio,
+      campus,
+      building,
+      floor,
+      isValid: !!(organization && portfolio && campus && building),
+    };
+  };
+
   // Bulk operations
+  const bulkImportOrganizations = (data: any[]) => {
+    const newOrganizations = data.map(item => ({
+      ...item,
+      id: Date.now().toString() + Math.random().toString(),
+      organizationId: generateOrganizationId(),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }));
+    setOrganizations(prev => [...newOrganizations, ...prev]);
+  };
+
   const bulkImportPortfolios = (data: any[]) => {
     const newPortfolios = data.map(item => ({
       ...item,
@@ -620,6 +784,15 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
     const results: any[] = [];
     const searchTerm = query.toLowerCase();
 
+    if (!entityType || entityType === 'organization') {
+      const matchingOrganizations = organizations.filter(o => 
+        o.name.toLowerCase().includes(searchTerm) ||
+        o.organizationId.toLowerCase().includes(searchTerm) ||
+        (o.headquarters && o.headquarters.toLowerCase().includes(searchTerm))
+      );
+      results.push(...matchingOrganizations.map(o => ({ ...o, entityType: 'organization' })));
+    }
+
     if (!entityType || entityType === 'portfolio') {
       const matchingPortfolios = portfolios.filter(p => 
         p.name.toLowerCase().includes(searchTerm) ||
@@ -672,11 +845,15 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <PortfolioContext.Provider value={{
+      organizations,
       portfolios,
       campuses,
       buildings,
       floors,
       seatZones,
+      createOrganization,
+      updateOrganization,
+      deleteOrganization,
       createPortfolio,
       updatePortfolio,
       deletePortfolio,
@@ -692,16 +869,21 @@ export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
       createSeatZone,
       updateSeatZone,
       deleteSeatZone,
+      getOrganizationHierarchy,
       getPortfolioHierarchy,
+      getPortfoliosByOrganization,
       getCampusesByPortfolio,
       getBuildingsByCampus,
       getFloorsByBuilding,
       getSeatZonesByFloor,
+      bulkImportOrganizations,
       bulkImportPortfolios,
       bulkImportCampuses,
       bulkImportBuildings,
       bulkImportFloors,
       searchEntities,
+      getOfficeHierarchy,
+      findOfficeByPath,
     }}>
       {children}
     </PortfolioContext.Provider>

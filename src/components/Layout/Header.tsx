@@ -10,51 +10,75 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useData } from '../../contexts/DataContext';
+import { usePortfolio } from '../../contexts/PortfolioContext';
 
 const Header = () => {
   const { user, logout } = useAuth();
   const { getUnreadNotifications } = useData();
+  const { getOfficeHierarchy, organizations } = usePortfolio();
   const unreadNotifications = getUnreadNotifications();
 
-  // Company/office selection states
-  const [selectedOffice, setSelectedOffice] = React.useState(''); // Display name only
-  const [expandedCompanies, setExpandedCompanies] = React.useState<string[]>([]);
+  // Office selection states
+  const [selectedOrganization, setSelectedOrganization] = React.useState('');
+  const [selectedOffice, setSelectedOffice] = React.useState('');
+  const [expandedOrganizations, setExpandedOrganizations] = React.useState<string[]>([]);
+  const [expandedPortfolios, setExpandedPortfolios] = React.useState<string[]>([]);
   const [expandedCountries, setExpandedCountries] = React.useState<string[]>([]);
-  const [expandedCities, setExpandedCities] = React.useState<string[]>([]);
+  const [expandedCampuses, setExpandedCampuses] = React.useState<string[]>([]);
+  const [expandedBuildings, setExpandedBuildings] = React.useState<string[]>([]);
   const [showDropdown, setShowDropdown] = React.useState(false);
 
   // Notifications dropdown
   const [showNotifications, setShowNotifications] = React.useState(false);
 
-  // Example hierarchical data
-  const companies = [
-    {
-      id: 'c1',
-      name: 'APAC',
-      countries: [
-        {
-          name: 'India',
-          cities: [
-            { name: 'Delhi', offices: ['Office 1', 'Office 2'] },
-            { name: 'Mumbai', offices: ['Office 1'] },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'c2',
-      name: 'EMEA',
-      countries: [
-        {
-          name: 'England',
-          cities: [
-            { name: 'Durham', offices: ['Office 1'] },
-            { name: 'London', offices: ['Office 1', 'Office 2', 'Office 3'] },
-          ],
-        },
-      ],
-    },
-  ];
+  // Get office hierarchy data
+  const officeHierarchy = getOfficeHierarchy(selectedOrganization || undefined);
+
+  // Organization selection handler
+  const handleOrganizationSelect = (orgId: string) => {
+    setSelectedOrganization(orgId);
+    setSelectedOffice('');
+    // Reset all expanded states
+    setExpandedOrganizations([]);
+    setExpandedPortfolios([]);
+    setExpandedCountries([]);
+    setExpandedCampuses([]);
+    setExpandedBuildings([]);
+  };
+
+  // Office selection handler
+  const handleOfficeSelect = (organization: any, portfolio: any, campus: any, building: any, floor?: any) => {
+    const officePath = floor 
+      ? `${organization.name} → ${portfolio.region} → ${portfolio.country} → ${campus.name} → ${building.buildingName} → Floor ${floor.floorNumber}`
+      : `${organization.name} → ${portfolio.region} → ${portfolio.country} → ${campus.name} → ${building.buildingName}`;
+    
+    setSelectedOffice(officePath);
+    setShowDropdown(false);
+    
+    // Store selection in localStorage for persistence
+    localStorage.setItem('selectedOffice', JSON.stringify({
+      organizationId: organization.id,
+      portfolioId: portfolio.id,
+      campusId: campus.id,
+      buildingId: building.id,
+      floorId: floor?.id,
+      displayName: officePath,
+    }));
+  };
+
+  // Load saved office selection on mount
+  React.useEffect(() => {
+    const savedOffice = localStorage.getItem('selectedOffice');
+    if (savedOffice) {
+      try {
+        const parsed = JSON.parse(savedOffice);
+        setSelectedOrganization(parsed.organizationId);
+        setSelectedOffice(parsed.displayName);
+      } catch (error) {
+        console.error('Error loading saved office selection:', error);
+      }
+    }
+  }, []);
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
@@ -80,7 +104,7 @@ const Header = () => {
             />
           </div>
 
-          {/* Company / Office Tree Dropdown */}
+          {/* Organization / Office Tree Dropdown */}
           <div className="relative">
             <button
               onClick={() => setShowDropdown(!showDropdown)}
@@ -92,93 +116,139 @@ const Header = () => {
             </button>
 
             {showDropdown && (
-              <div className="absolute mt-2 w-64 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
-                {companies.map((company) => (
-                  <div key={company.id} className="border-b border-gray-100 last:border-none">
-                    {/* Company */}
+              <div className="absolute mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50 max-h-96 overflow-y-auto">
+                {/* Organization Selection */}
+                {organizations.length > 1 && (
+                  <div className="p-3 border-b border-gray-200 bg-gray-50">
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Select Organization:</label>
+                    <select
+                      value={selectedOrganization}
+                      onChange={(e) => handleOrganizationSelect(e.target.value)}
+                      className="w-full text-sm border border-gray-300 rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">All Organizations</option>
+                      {organizations.map((org) => (
+                        <option key={org.id} value={org.id}>
+                          {org.name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {officeHierarchy.map((organization) => (
+                  <div key={organization.id} className="border-b border-gray-100 last:border-none">
+                    {/* Organization */}
                     <button
                       onClick={() =>
-                        setExpandedCompanies((prev) =>
-                          prev.includes(company.id)
-                            ? prev.filter((id) => id !== company.id)
-                            : [...prev, company.id]
+                        setExpandedOrganizations((prev) =>
+                          prev.includes(organization.id)
+                            ? prev.filter((id) => id !== organization.id)
+                            : [...prev, organization.id]
                         )
                       }
-                      className="flex w-full justify-between items-center px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      className="flex w-full justify-between items-center px-3 py-2 text-sm font-bold text-gray-800 hover:bg-gray-50"
                     >
-                      {company.name}
-                      {expandedCompanies.includes(company.id) ? (
+                      {organization.name}
+                      {expandedOrganizations.includes(organization.id) ? (
                         <ChevronDown className="h-4 w-4" />
                       ) : (
                         <ChevronRight className="h-4 w-4" />
                       )}
                     </button>
 
-                    {/* Countries */}
-                    {expandedCompanies.includes(company.id) &&
-                      company.countries.map((country) => (
-                        <div key={country.name} className="pl-4">
+                    {/* Portfolios */}
+                    {expandedOrganizations.includes(organization.id) &&
+                      organization.portfolios.map((portfolio) => (
+                        <div key={portfolio.id} className="pl-4">
                           <button
                             onClick={() =>
-                              setExpandedCountries((prev) =>
-                                prev.includes(`${company.id}-${country.name}`)
-                                  ? prev.filter((id) => id !== `${company.id}-${country.name}`)
-                                  : [...prev, `${company.id}-${country.name}`]
+                              setExpandedPortfolios((prev) =>
+                                prev.includes(portfolio.id)
+                                  ? prev.filter((id) => id !== portfolio.id)
+                                  : [...prev, portfolio.id]
                               )
                             }
-                            className="flex w-full justify-between items-center px-3 py-1 text-sm text-gray-600 hover:bg-gray-50 rounded"
+                            className="flex w-full justify-between items-center px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded"
                           >
-                            {country.name}
-                            {expandedCountries.includes(`${company.id}-${country.name}`) ? (
+                            {portfolio.region} - {portfolio.country}
+                            {expandedPortfolios.includes(portfolio.id) ? (
                               <ChevronDown className="h-3 w-3" />
                             ) : (
                               <ChevronRight className="h-3 w-3" />
                             )}
                           </button>
 
-                          {/* Cities */}
-                          {expandedCountries.includes(`${company.id}-${country.name}`) &&
-                            country.cities.map((city) => (
-                              <div key={city.name} className="pl-4">
+                          {/* Campuses */}
+                          {expandedPortfolios.includes(portfolio.id) &&
+                            portfolio.campuses.map((campus) => (
+                              <div key={campus.id} className="pl-4">
                                 <button
                                   onClick={() =>
-                                    setExpandedCities((prev) =>
-                                      prev.includes(`${company.id}-${country.name}-${city.name}`)
+                                    setExpandedCampuses((prev) =>
+                                      prev.includes(campus.id)
                                         ? prev.filter(
                                             (id) =>
-                                              id !==
-                                              `${company.id}-${country.name}-${city.name}`
+                                              id !== campus.id
                                           )
-                                        : [...prev, `${company.id}-${country.name}-${city.name}`]
+                                        : [...prev, campus.id]
                                     )
                                   }
                                   className="flex w-full justify-between items-center px-3 py-1 text-sm text-gray-500 hover:bg-gray-50 rounded"
                                 >
-                                  {city.name}
-                                  {expandedCities.includes(
-                                    `${company.id}-${country.name}-${city.name}`
-                                  ) ? (
+                                  {campus.name} ({campus.city})
+                                  {expandedCampuses.includes(campus.id) ? (
                                     <ChevronDown className="h-3 w-3" />
                                   ) : (
                                     <ChevronRight className="h-3 w-3" />
                                   )}
                                 </button>
 
-                                {/* Offices */}
-                                {expandedCities.includes(
-                                  `${company.id}-${country.name}-${city.name}`
-                                ) &&
-                                  city.offices.map((office) => (
-                                    <button
-                                      key={office}
-                                      onClick={() => {
-                                        setSelectedOffice(office);
-                                        setShowDropdown(false);
-                                      }}
-                                      className="block w-full text-left px-3 py-1 text-sm text-gray-500 hover:bg-gray-100 rounded"
-                                    >
-                                      {office}
-                                    </button>
+                                {/* Buildings */}
+                                {expandedCampuses.includes(campus.id) &&
+                                  campus.buildings.map((building) => (
+                                    <div key={building.id} className="pl-4">
+                                      <button
+                                        onClick={() =>
+                                          setExpandedBuildings((prev) =>
+                                            prev.includes(building.id)
+                                              ? prev.filter((id) => id !== building.id)
+                                              : [...prev, building.id]
+                                          )
+                                        }
+                                        className="flex w-full justify-between items-center px-3 py-1 text-sm text-gray-400 hover:bg-gray-50 rounded"
+                                      >
+                                        {building.buildingName}
+                                        {expandedBuildings.includes(building.id) ? (
+                                          <ChevronDown className="h-3 w-3" />
+                                        ) : (
+                                          <ChevronRight className="h-3 w-3" />
+                                        )}
+                                      </button>
+
+                                      {/* Building Selection */}
+                                      {expandedBuildings.includes(building.id) && (
+                                        <div className="pl-4">
+                                          <button
+                                            onClick={() => handleOfficeSelect(organization, portfolio, campus, building)}
+                                            className="block w-full text-left px-3 py-1 text-xs text-gray-500 hover:bg-blue-50 hover:text-blue-700 rounded"
+                                          >
+                                            📍 {building.buildingName}
+                                          </button>
+                                          
+                                          {/* Floors */}
+                                          {building.floors.map((floor) => (
+                                            <button
+                                              key={floor.id}
+                                              onClick={() => handleOfficeSelect(organization, portfolio, campus, building, floor)}
+                                              className="block w-full text-left px-3 py-1 text-xs text-gray-500 hover:bg-blue-50 hover:text-blue-700 rounded"
+                                            >
+                                              🏢 Floor {floor.floorNumber}
+                                            </button>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
                                   ))}
                               </div>
                             ))}

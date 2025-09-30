@@ -2,14 +2,19 @@ import React, { useState } from 'react';
 import { Plus, Filter, Search, FileCheck, Clock, Wrench } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import ServiceOrderCard from './ServiceOrderCard';
 
 const ServiceOrders = () => {
   const { serviceOrders } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
+
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
 
   // Filter service orders based on user role and filters
   const filteredServiceOrders = serviceOrders.filter(serviceOrder => {
@@ -50,6 +55,11 @@ const ServiceOrders = () => {
               ? 'Your assigned non-asset service tasks and compliance work'
               : 'Manage non-asset service orders (compliance, cleaning, general services)'
             }
+           {officeContext && (
+             <span className="block text-sm text-blue-600 mt-1">
+               📍 Context: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+             </span>
+           )}
           </p>
         </div>
 

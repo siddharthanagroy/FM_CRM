@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Filter, Search, Download, Upload, FileText } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import ServiceRequestCard from './ServiceRequestCard';
 import CreateServiceRequestModal from './CreateServiceRequestModal';
 import Papa from 'papaparse';
@@ -9,13 +10,30 @@ import Papa from 'papaparse';
 const ServiceRequests = () => {
   const { complaints, bulkImportComplaints, createWorkOrder, createServiceOrder } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
 
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
+
   // Filter service requests
   const filteredServiceRequests = complaints.filter(sr => {
+    // Filter by office context if available
+    if (officeContext) {
+      const srLocation = sr.location.toLowerCase();
+      const buildingName = officeContext.building?.buildingName.toLowerCase();
+      const campusName = officeContext.campus?.name.toLowerCase();
+      
+      // Check if service request location matches selected office context
+      const matchesOffice = buildingName && srLocation.includes(buildingName) ||
+                           campusName && srLocation.includes(campusName);
+      
+      if (!matchesOffice) return false;
+    }
+
     const matchesSearch = sr.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sr.ticketId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || sr.status === statusFilter;
@@ -110,6 +128,11 @@ const ServiceRequests = () => {
               ? 'Track your submitted service requests and issues'
               : 'Manage facility service requests from end users'
             }
+            {officeContext && (
+              <span className="block text-sm text-blue-600 mt-1">
+                📍 Filtered by: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+              </span>
+            )}
           </p>
         </div>
 

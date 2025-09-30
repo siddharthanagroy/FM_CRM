@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Filter, Search, Download, Upload, Recycle, TrendingUp, DollarSign, Leaf } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import WasteEntryCard from './WasteEntryCard';
 import CreateWasteEntryModal from './CreateWasteEntryModal';
 import WasteAnalytics from './WasteAnalytics';
@@ -12,6 +13,7 @@ import Papa from 'papaparse';
 const WasteManagement = () => {
   const { wasteEntries, bulkImportWasteEntries, getWasteMetrics } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
@@ -19,8 +21,24 @@ const WasteManagement = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [activeTab, setActiveTab] = useState<'entries' | 'analytics' | 'vendors' | 'targets'>('entries');
 
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
+
   // Filter waste entries
   const filteredEntries = wasteEntries.filter(entry => {
+    // Filter by office context if available
+    if (officeContext) {
+      const entryLocation = entry.location.toLowerCase();
+      const buildingName = officeContext.building?.buildingName.toLowerCase();
+      const campusName = officeContext.campus?.name.toLowerCase();
+      
+      // Check if entry location matches selected office context
+      const matchesOffice = buildingName && entryLocation.includes(buildingName) ||
+                           campusName && entryLocation.includes(campusName);
+      
+      if (!matchesOffice) return false;
+    }
+
     const matchesSearch = entry.entryId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          entry.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          entry.wasteCategory.toLowerCase().includes(searchTerm.toLowerCase());
@@ -98,6 +116,11 @@ const WasteManagement = () => {
           </h1>
           <p className="text-gray-600">
             Track waste streams, monitor 3R metrics, and generate ESG reports
+            {officeContext && (
+              <span className="block text-sm text-blue-600 mt-1">
+                📍 Filtered by: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+              </span>
+            )}
           </p>
         </div>
 

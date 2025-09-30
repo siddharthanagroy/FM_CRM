@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Plus, Search, Filter, CheckSquare, Clock, AlertTriangle, Calendar } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import ChecklistCard from './ChecklistCard';
 import CreateChecklistModal from './CreateChecklistModal';
 import ChecklistExecutionModal from './ChecklistExecutionModal';
@@ -9,6 +10,7 @@ import ChecklistExecutionModal from './ChecklistExecutionModal';
 const Checklists = () => {
   const { checklists, checklistExecutions } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showExecutionModal, setShowExecutionModal] = useState(false);
   const [selectedChecklist, setSelectedChecklist] = useState<any>(null);
@@ -16,6 +18,9 @@ const Checklists = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'templates' | 'executions'>('templates');
+
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
 
   // Filter checklists based on user role and filters
   const filteredChecklists = checklists.filter(checklist => {
@@ -78,6 +83,11 @@ const Checklists = () => {
               ? 'Complete your assigned inspection and maintenance checklists'
               : 'Manage digital checklists for inspections, maintenance, and compliance'
             }
+            {officeContext && (
+              <span className="block text-sm text-blue-600 mt-1">
+                📍 Context: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+              </span>
+            )}
           </p>
         </div>
 

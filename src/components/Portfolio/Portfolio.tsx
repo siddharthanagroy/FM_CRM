@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3 } from 'lucide-react';
+import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3, Building } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { useAuth } from '../../contexts/AuthContext';
 import PortfolioHierarchy from './PortfolioHierarchy';
 import PortfolioDashboard from './PortfolioDashboard';
+import CreateOrganizationModal from './CreateOrganizationModal';
 import CreatePortfolioModal from './CreatePortfolioModal';
 import CreateCampusModal from './CreateCampusModal';
 import CreateBuildingModal from './CreateBuildingModal';
@@ -13,6 +14,7 @@ import Papa from 'papaparse';
 
 const Portfolio = () => {
   const { 
+    organizations,
     portfolios, 
     campuses, 
     buildings, 
@@ -40,6 +42,10 @@ const Portfolio = () => {
     let filename = '';
 
     switch (entityType) {
+      case 'organizations':
+        data = organizations;
+        filename = 'organizations.csv';
+        break;
       case 'portfolios':
         data = portfolios;
         filename = 'portfolios.csv';
@@ -77,6 +83,7 @@ const Portfolio = () => {
 
   // Calculate summary statistics
   const stats = {
+    totalOrganizations: organizations.length,
     totalPortfolios: portfolios.length,
     totalCampuses: campuses.length,
     totalBuildings: buildings.length,
@@ -98,7 +105,7 @@ const Portfolio = () => {
             Portfolio Management
           </h1>
           <p className="text-gray-600">
-            Master data layer for all facilities across portfolios, campuses, buildings, and floors
+            Master data layer for organizations, portfolios, campuses, buildings, and floors
           </p>
         </div>
 
@@ -120,6 +127,7 @@ const Portfolio = () => {
                   defaultValue=""
                 >
                   <option value="" disabled>Export Data</option>
+                  <option value="organizations">Export Organizations</option>
                   <option value="portfolios">Export Portfolios</option>
                   <option value="campuses">Export Campuses</option>
                   <option value="buildings">Export Buildings</option>
@@ -135,6 +143,7 @@ const Portfolio = () => {
                   defaultValue=""
                 >
                   <option value="" disabled>Create New</option>
+                  <option value="organization">Organization</option>
                   <option value="portfolio">Portfolio</option>
                   <option value="campus">Campus</option>
                   <option value="building">Building</option>
@@ -147,7 +156,11 @@ const Portfolio = () => {
       </div>
 
       {/* Summary Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+          <div className="text-2xl font-bold text-indigo-600">{stats.totalOrganizations}</div>
+          <div className="text-sm text-gray-600">Organizations</div>
+        </div>
         <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
           <div className="text-2xl font-bold text-blue-600">{stats.totalPortfolios}</div>
           <div className="text-sm text-gray-600">Portfolios</div>
@@ -224,6 +237,7 @@ const Portfolio = () => {
               className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Entities</option>
+              <option value="organization">Organizations</option>
               <option value="portfolio">Portfolios</option>
               <option value="campus">Campuses</option>
               <option value="building">Buildings</option>
@@ -248,10 +262,10 @@ const Portfolio = () => {
                 >
                   <div>
                     <span className="font-medium">
-                      {result.name || result.buildingName || result.floorNumber || result.seatZoneId}
+                      {result.name || result.buildingName || result.floorNumber || result.seatZoneId || result.organizationId}
                     </span>
                     <span className="ml-2 text-sm text-gray-500">
-                      ({result.entityType}) - {result.portfolioId || result.campusId || result.buildingId || result.floorId}
+                      ({result.entityType}) - {result.organizationId || result.portfolioId || result.campusId || result.buildingId || result.floorId}
                     </span>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
@@ -275,6 +289,13 @@ const Portfolio = () => {
       {activeTab === 'dashboard' && <PortfolioDashboard />}
 
       {/* Modals */}
+      {showCreateModal === 'organization' && (
+        <CreateOrganizationModal
+          onClose={() => setShowCreateModal(null)}
+          onCreate={() => setShowCreateModal(null)}
+        />
+      )}
+
       {showCreateModal === 'portfolio' && (
         <CreatePortfolioModal
           onClose={() => setShowCreateModal(null)}

@@ -2,17 +2,25 @@ import React, { useState } from 'react';
 import { Plus, Filter, Search, Calendar, Clock, Wrench } from 'lucide-react';
 import { useData } from '../../contexts/DataContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useOfficeSelection } from '../../hooks/useOfficeSelection';
 import WorkOrderCard from './WorkOrderCard';
 
 const WorkOrders = () => {
   const { workOrders } = useData();
   const { user } = useAuth();
+  const { getOfficeContext } = useOfficeSelection();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
 
+  // Get office context for filtering
+  const officeContext = getOfficeContext();
+
   // Filter work orders based on user role and filters
   const filteredWorkOrders = workOrders.filter(workOrder => {
+    // Note: Work orders are asset-related, so we could filter by asset location
+    // For now, we'll show all work orders but this can be enhanced
+    
     const matchesSearch = workOrder.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          workOrder.workOrderId.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || workOrder.status === statusFilter;
@@ -50,6 +58,11 @@ const WorkOrders = () => {
               ? 'Your assigned asset maintenance and PPM tasks'
               : 'Manage asset-related maintenance work orders (PPM, breakdowns, inspections)'
             }
+            {officeContext && (
+              <span className="block text-sm text-blue-600 mt-1">
+                📍 Context: {officeContext.building?.buildingName} - {officeContext.campus?.name}
+              </span>
+            )}
           </p>
         </div>
 

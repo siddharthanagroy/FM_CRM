@@ -8,8 +8,8 @@ interface BulkImportModalProps {
 }
 
 const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose }) => {
-  const { bulkImportPortfolios, bulkImportCampuses, bulkImportBuildings, bulkImportFloors } = usePortfolio();
-  const [selectedEntityType, setSelectedEntityType] = useState<string>('portfolios');
+  const { bulkImportOrganizations, bulkImportPortfolios, bulkImportCampuses, bulkImportBuildings, bulkImportFloors } = usePortfolio();
+  const [selectedEntityType, setSelectedEntityType] = useState<string>('organizations');
   const [loading, setLoading] = useState(false);
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -24,6 +24,9 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose }) => {
       complete: (result) => {
         try {
           switch (selectedEntityType) {
+            case 'organizations':
+              bulkImportOrganizations(result.data);
+              break;
             case 'portfolios':
               bulkImportPortfolios(result.data);
               break;
@@ -59,8 +62,18 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose }) => {
     let filename = '';
 
     switch (selectedEntityType) {
+      case 'organizations':
+        templateData = [{
+          name: 'Sample Organization',
+          description: 'Sample organization description',
+          headquarters: 'City, Country',
+          website: 'https://example.com'
+        }];
+        filename = 'organization_template.csv';
+        break;
       case 'portfolios':
         templateData = [{
+          organizationId: '1',
           name: 'Sample Portfolio',
           region: 'APAC',
           country: 'India',
@@ -143,6 +156,7 @@ const BulkImportModal: React.FC<BulkImportModalProps> = ({ onClose }) => {
   };
 
   const entityTypes = [
+    { value: 'organizations', label: 'Organizations' },
     { value: 'portfolios', label: 'Portfolios' },
     { value: 'campuses', label: 'Campuses' },
     { value: 'buildings', label: 'Buildings' },

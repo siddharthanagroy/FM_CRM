@@ -8,9 +8,10 @@ interface CreatePortfolioModalProps {
 }
 
 const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ onClose, onCreate }) => {
-  const { createPortfolio } = usePortfolio();
+  const { createPortfolio, organizations } = usePortfolio();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
+    organizationId: '',
     name: '',
     region: '',
     country: '',
@@ -84,6 +85,27 @@ const CreatePortfolioModal: React.FC<CreatePortfolioModalProps> = ({ onClose, on
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label htmlFor="organizationId" className="block text-sm font-medium text-gray-700 mb-1">
+              Organization *
+            </label>
+            <select
+              id="organizationId"
+              name="organizationId"
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              value={formData.organizationId}
+              onChange={handleInputChange}
+            >
+              <option value="">Select Organization</option>
+              {organizations.map((organization) => (
+                <option key={organization.id} value={organization.id}>
+                  {organization.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
           <div>
             <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
               Portfolio Name *
