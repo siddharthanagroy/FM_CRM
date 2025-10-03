@@ -13,6 +13,7 @@ import Compliances from './components/Compliances/Compliances';
 import Checklists from './components/Checklists/Checklists';
 import WasteManagement from './components/WasteManagement/WasteManagement';
 import Portfolio from './components/Portfolio/Portfolio';
+import PortfolioManager from './components/PortfolioManager';
 import Layout from './components/Layout/Layout';
 import './App.css';
 
@@ -31,7 +32,8 @@ function AppRoutes() {
   return (
     <Layout>
       <Routes>
-        <Route path="/" element={<Dashboard />} />
+        <Route path="/" element={<PortfolioManager />} />
+        <Route path="/portfolios" element={<PortfolioManager />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/service-requests" element={<ServiceRequests />} />
         <Route path="/complaints" element={<ServiceRequests />} />
