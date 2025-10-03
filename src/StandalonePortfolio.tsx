@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from './lib/supabase';
 import { Portfolio, PortfolioWithDetails, OrganizationWithCountry } from './types/database';
-import { Plus, Edit2, Trash2, Search, Building2, AlertTriangle, X } from 'lucide-react';
+import { Plus, CreditCard as Edit2, Trash2, Search, Building2, AlertTriangle, X } from 'lucide-react';
 
 export default function StandalonePortfolio() {
   const [portfolios, setPortfolios] = useState<PortfolioWithDetails[]>([]);
