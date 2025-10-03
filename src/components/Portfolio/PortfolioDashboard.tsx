@@ -4,46 +4,60 @@ import {
   PieChart,
   TrendingUp,
   Users,
-  Building,
-  Building2,
-  MapPin,
   Home,
   Layers,
+  MapPin,
 } from "lucide-react";
+import { usePortfolio } from "../../contexts/PortfolioContext";
 
 const PortfolioDashboard = () => {
-  const totalValue = 25000000;
-  const totalUnits = 1200;
-  const occupancyRate = 92;
-  const avgRent = 1800;
+  const { portfolios, campuses, buildings, floors, seatZones } = usePortfolio();
 
-  const propertiesByType = [
-    { type: "Residential", value: 15000000, percentage: 60 },
-    { type: "Commercial", value: 7000000, percentage: 28 },
-    { type: "Industrial", value: 3000000, percentage: 12 },
-  ];
+  // Compute totals
+  const totalUnits = floors.reduce((sum, floor) => sum + (floor.totalSeats || 0), 0);
+  const totalBuildings = buildings.length;
+  const totalCampuses = campuses.length;
+  const occupiedSeats = seatZones.filter((s) => s.occupancyStatus === "assigned").length;
+  const occupancyRate = totalUnits ? Math.round((occupiedSeats / totalUnits) * 100) : 0;
+  const totalValue = portfolios.reduce((sum, p) => sum + (p.value || 0), 0);
+  const avgRent = totalUnits ? Math.round(totalValue / totalUnits) : 0;
 
-  const propertiesByLocation = [
-    { location: "New York", count: 450, percentage: 37 },
-    { location: "Los Angeles", count: 320, percentage: 27 },
-    { location: "Chicago", count: 250, percentage: 21 },
-    { location: "Miami", count: 180, percentage: 15 },
-  ];
+  // Properties by type
+  const propertiesByType = ["Residential", "Commercial", "Industrial"].map((type) => {
+    const value = portfolios
+      .filter((p) => p.type === type)
+      .reduce((sum, p) => sum + (p.value || 0), 0);
+    return {
+      type,
+      value,
+      percentage: totalValue ? Math.round((value / totalValue) * 100) : 0,
+    };
+  });
 
+  // Properties by location (campus)
+  const propertiesByLocation = campuses.map((c) => {
+    const count = buildings.filter((b) => b.campusId === c.id).length;
+    return {
+      location: c.name,
+      count,
+      percentage: totalBuildings ? Math.round((count / totalBuildings) * 100) : 0,
+    };
+  });
+
+  // Recent trends (simple placeholder logic)
   const recentTrends = [
     { metric: "Portfolio Value", change: "+5.2%", positive: true },
-    { metric: "Occupancy Rate", change: "-1.8%", positive: false },
+    { metric: "Occupancy Rate", change: occupancyRate >= 90 ? "+2%" : "-1%", positive: occupancyRate >= 90 },
     { metric: "Average Rent", change: "+3.1%", positive: true },
   ];
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
-  };
 
   return (
     <div className="p-6 space-y-6">
@@ -113,8 +127,7 @@ const PortfolioDashboard = () => {
       {/* Properties by Location */}
       <div className="bg-white p-6 rounded-xl shadow-sm">
         <h2 className="text-lg font-semibold mb-4 flex items-center">
-          <MapPin className="h-5 w-5 mr-2 text-red-500" /> Properties by
-          Location
+          <MapPin className="h-5 w-5 mr-2 text-red-500" /> Properties by Location
         </h2>
         <div className="space-y-4">
           {propertiesByLocation.map((item, idx) => (
