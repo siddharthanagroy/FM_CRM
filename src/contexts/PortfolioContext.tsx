@@ -1,13 +1,8 @@
-import React, { createContext, useState, ReactNode } from 'react';
-import { v4 as uuidv4 } from 'uuid';
+import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import {
   Portfolio, Organization, Campus, Building, Floor, SeatZone
 } from '../types/database';
-import {
-  generateCampusId,
-  generateBuildingId,
-  generateFloorId
-} from '../utils/idGenerators';
 
 interface PortfolioContextType {
   organizations: Organization[];
@@ -16,33 +11,57 @@ interface PortfolioContextType {
   buildings: Building[];
   floors: Floor[];
   seatZones: SeatZone[];
-  createOrganization: (org: Organization) => void;
+  loading: boolean;
+  error: string | null;
+  setOrganizations: (orgs: Organization[]) => void;
+  setPortfolios: (portfolios: Portfolio[]) => void;
+  setCampuses: (campuses: Campus[]) => void;
+  setBuildings: (buildings: Building[]) => void;
+  setFloors: (floors: Floor[]) => void;
+  setSeatZones: (seatZones: SeatZone[]) => void;
+  createOrganization: (org: any) => Promise<void>;
   updateOrganization: (org: Organization) => void;
   deleteOrganization: (id: string) => void;
-  createPortfolio: (p: Portfolio) => void;
+  createPortfolio: (p: any) => Promise<void>;
   updatePortfolio: (p: Portfolio) => void;
   deletePortfolio: (id: string) => void;
-  createCampus: (c: Campus) => void;
+  createCampus: (c: any) => Promise<void>;
   updateCampus: (c: Campus) => void;
   deleteCampus: (id: string) => void;
-  createBuilding: (b: Building) => void;
+  createBuilding: (b: any) => Promise<void>;
   updateBuilding: (b: Building) => void;
   deleteBuilding: (id: string) => void;
-  createFloor: (f: Floor) => void;
+  createFloor: (f: any) => Promise<void>;
   updateFloor: (f: Floor) => void;
   deleteFloor: (id: string) => void;
   createSeatZone: (s: SeatZone) => void;
   updateSeatZone: (s: SeatZone) => void;
   deleteSeatZone: (id: string) => void;
-  bulkImportOrganizations: (data: any[]) => void;
-  bulkImportPortfolios: (data: any[]) => void;
-  bulkImportCampuses: (data: any[]) => void;
-  bulkImportBuildings: (data: any[]) => void;
-  bulkImportFloors: (data: any[]) => void;
+  bulkImportOrganizations: (data: any[]) => Promise<void>;
+  bulkImportPortfolios: (data: any[]) => Promise<void>;
+  bulkImportCampuses: (data: any[]) => Promise<void>;
+  bulkImportBuildings: (data: any[]) => Promise<void>;
+  bulkImportFloors: (data: any[]) => Promise<void>;
   searchEntities: (query: string, entityType?: string) => any[];
+  getOrganizationHierarchy: () => any[];
+  getOrganizationById: (id: string) => Organization | undefined;
+  getPortfolioById: (id: string) => Portfolio | undefined;
+  getCampusById: (id: string) => Campus | undefined;
+  getBuildingById: (id: string) => Building | undefined;
+  getFloorById: (id: string) => Floor | undefined;
+  fetchAllData: () => Promise<void>;
 }
 
 export const PortfolioContext = createContext<PortfolioContextType>({} as PortfolioContextType);
+
+// Custom hook to use the context
+export const usePortfolio = () => {
+  const context = useContext(PortfolioContext);
+  if (!context) {
+    throw new Error('usePortfolio must be used within PortfolioProvider');
+  }
+  return context;
+};
 
 interface Props {
   children: ReactNode;
@@ -55,131 +74,207 @@ export const PortfolioProvider = ({ children }: Props) => {
   const [buildings, setBuildings] = useState<Building[]>([]);
   const [floors, setFloors] = useState<Floor[]>([]);
   const [seatZones, setSeatZones] = useState<SeatZone[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Bulk import for Organizations
-  const bulkImportOrganizations = (data: any[]) => {
-    const newOrgs = data.map(item => ({
-      id: uuidv4(),
-      organizationid: item.organizationid || `ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      name: item.name,
-      description: item.description || null,
-      headquarters: item.headquarters || null,
-      website: item.website || null,
-      country_code: item.country_code || null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }));
-    setOrganizations(prev => [...prev, ...newOrgs]);
+  // Fetch all data on mount
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const [orgsRes, portfoliosRes, campusesRes, buildingsRes, floorsRes, seatZonesRes] = await Promise.all([
+        supabase.from('organizations').select('*'),
+        supabase.from('portfolios').select('*'),
+        supabase.from('campuses').select('*'),
+        supabase.from('buildings').select('*'),
+        supabase.from('floors').select('*'),
+        supabase.from('seat_zones').select('*')
+      ]);
+
+      if (orgsRes.error) throw orgsRes.error;
+      if (portfoliosRes.error) throw portfoliosRes.error;
+      if (campusesRes.error) throw campusesRes.error;
+      if (buildingsRes.error) throw buildingsRes.error;
+      if (floorsRes.error) throw floorsRes.error;
+      if (seatZonesRes.error) throw seatZonesRes.error;
+
+      setOrganizations(orgsRes.data || []);
+      setPortfolios(portfoliosRes.data || []);
+      setCampuses(campusesRes.data || []);
+      setBuildings(buildingsRes.data || []);
+      setFloors(floorsRes.data || []);
+      setSeatZones(seatZonesRes.data || []);
+    } catch (err: any) {
+      console.error('Error fetching data:', err);
+      setError(err.message || 'Failed to fetch data');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Bulk import for Portfolios
-  const bulkImportPortfolios = (data: any[]) => {
-    const newPortfolios = data.map(item => {
-      // Find the organization by either id or organizationid
-      const org = organizations.find(o => 
-        o.id === item.organizationid || 
-        o.organizationid === item.organizationid
-      );
-
-      return {
-        id: uuidv4(),
-        portfolioid: item.portfolioid || `PF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        organizationid: org?.id || item.organizationid,
-        name: item.name,
-        description: item.description || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-    });
-    setPortfolios(prev => [...prev, ...newPortfolios]);
+  // Create functions with Supabase integration
+  const createOrganization = async (orgData: any) => {
+    const { data, error } = await supabase
+      .from('organizations')
+      .insert([orgData])
+      .select();
+    
+    if (error) throw error;
+    if (data) setOrganizations(prev => [...prev, ...data]);
   };
 
-  // Bulk import for Campuses
-  const bulkImportCampuses = (data: any[]) => {
-    const newCampuses = data.map(item => {
-      // Find the portfolio by either id or portfolioid
-      const portfolio = portfolios.find(p => 
-        p.id === item.portfolioid || 
-        p.portfolioid === item.portfolioid
-      );
-
-      // Get country code from portfolio's organization if available
-      const org = organizations.find(o => o.id === portfolio?.organizationid);
-      const countryCode = item.country_code || org?.country_code || 'XX';
-
-      return {
-        id: uuidv4(),
-        campusid: item.campusid || generateCampusId(countryCode),
-        portfolioid: portfolio?.id || item.portfolioid,
-        name: item.name,
-        country: item.country,
-        city: item.city,
-        address: item.address || null,
-        city_id: item.city_id || null,
-        status: item.status || 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-    });
-    setCampuses(prev => [...prev, ...newCampuses]);
+  const createPortfolio = async (portfolioData: any) => {
+    const { data, error } = await supabase
+      .from('portfolios')
+      .insert([portfolioData])
+      .select();
+    
+    if (error) throw error;
+    if (data) setPortfolios(prev => [...prev, ...data]);
   };
 
-  // Bulk import for Buildings
-  const bulkImportBuildings = (data: any[]) => {
-    const newBuildings = data.map(item => {
-      // Find the campus by either id or campusid
-      const campus = campuses.find(c => 
-        c.id === item.campusid || 
-        c.campusid === item.campusid
-      );
-
-      const buildingCode = item.buildingCode || item.code || 'BLD';
-
-      return {
-        id: uuidv4(),
-        buildingid: item.buildingid || generateBuildingId(campus?.campusid || 'XX-000', buildingCode),
-        campusid: campus?.id || item.campusid,
-        name: item.name,
-        totalareacarpet: item.totalareacarpet || 0,
-        totalfloors: item.totalfloors || 0,
-        status: item.status || 'active',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-    });
-    setBuildings(prev => [...prev, ...newBuildings]);
+  const createCampus = async (campusData: any) => {
+    const { data, error } = await supabase
+      .from('campuses')
+      .insert([campusData])
+      .select();
+    
+    if (error) throw error;
+    if (data) setCampuses(prev => [...prev, ...data]);
   };
 
-  // Bulk import for Floors
-  const bulkImportFloors = (data: any[]) => {
-    const newFloors = data.map(item => {
-      // Find the building by either id or buildingid
-      const building = buildings.find(b => 
-        b.id === item.buildingid || 
-        b.buildingid === item.buildingid
-      );
+  const createBuilding = async (buildingData: any) => {
+    const { data, error } = await supabase
+      .from('buildings')
+      .insert([buildingData])
+      .select();
+    
+    if (error) throw error;
+    if (data) setBuildings(prev => [...prev, ...data]);
+  };
 
-      // Calculate total seats from seatCounts if provided
-      let totalSeats = item.totalseats || 0;
-      if (item.seatCounts && typeof item.seatCounts === 'object') {
-        totalSeats = Object.values(item.seatCounts).reduce(
-          (sum: number, count) => sum + Number(count || 0), 
-          0
-        );
-      }
+  const createFloor = async (floorData: any) => {
+    const { data, error } = await supabase
+      .from('floors')
+      .insert([floorData])
+      .select();
+    
+    if (error) throw error;
+    if (data) setFloors(prev => [...prev, ...data]);
+  };
 
+  // Bulk import functions
+  const bulkImportOrganizations = async (data: any[]) => {
+    const { data: inserted, error } = await supabase
+      .from('organizations')
+      .insert(data)
+      .select();
+    
+    if (error) throw error;
+    if (inserted) setOrganizations(prev => [...prev, ...inserted]);
+  };
+
+  const bulkImportPortfolios = async (data: any[]) => {
+    const { data: inserted, error } = await supabase
+      .from('portfolios')
+      .insert(data)
+      .select();
+    
+    if (error) throw error;
+    if (inserted) setPortfolios(prev => [...prev, ...inserted]);
+  };
+
+  const bulkImportCampuses = async (data: any[]) => {
+    const { data: inserted, error } = await supabase
+      .from('campuses')
+      .insert(data)
+      .select();
+    
+    if (error) throw error;
+    if (inserted) setCampuses(prev => [...prev, ...inserted]);
+  };
+
+  const bulkImportBuildings = async (data: any[]) => {
+    const { data: inserted, error } = await supabase
+      .from('buildings')
+      .insert(data)
+      .select();
+    
+    if (error) throw error;
+    if (inserted) setBuildings(prev => [...prev, ...inserted]);
+  };
+
+  const bulkImportFloors = async (data: any[]) => {
+    const { data: inserted, error } = await supabase
+      .from('floors')
+      .insert(data)
+      .select();
+    
+    if (error) throw error;
+    if (inserted) setFloors(prev => [...prev, ...inserted]);
+  };
+
+  // Helper functions
+  const getOrganizationById = (id: string) => organizations.find(o => o.id === id);
+  const getPortfolioById = (id: string) => portfolios.find(p => p.id === id);
+  const getCampusById = (id: string) => campuses.find(c => c.id === id);
+  const getBuildingById = (id: string) => buildings.find(b => b.id === id);
+  const getFloorById = (id: string) => floors.find(f => f.id === id);
+
+  // Build hierarchy
+  const getOrganizationHierarchy = () => {
+    return organizations.map(org => {
+      const orgPortfolios = portfolios.filter(p => p.organizationid === org.id);
+      
       return {
-        id: uuidv4(),
-        floorid: item.floorid || generateFloorId(building?.buildingid || 'XX-000-XX', item.floornumber),
-        buildingid: building?.id || item.buildingid,
-        floornumber: item.floornumber,
-        totalseats: totalSeats,
-        carpetarea: item.carpetarea || null,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        ...org,
+        portfolios: orgPortfolios.map(portfolio => {
+          const portfolioCampuses = campuses.filter(c => c.portfolioid === portfolio.id);
+          
+          return {
+            ...portfolio,
+            campuses: portfolioCampuses.map(campus => {
+              const campusBuildings = buildings.filter(b => b.campusid === campus.id);
+              
+              return {
+                ...campus,
+                buildings: campusBuildings.map(building => {
+                  const buildingFloors = floors.filter(f => f.buildingid === building.id);
+                  
+                  return {
+                    ...building,
+                    // Map database fields to component expected fields
+                    buildingName: building.name,
+                    buildingId: building.buildingid,
+                    totalAreaCarpet: building.totalareacarpet,
+                    numberOfFloors: building.totalfloors,
+                    ownershipType: 'leased', // Default since not in schema
+                    floors: buildingFloors.map(floor => ({
+                      ...floor,
+                      floorId: floor.floorid,
+                      floorNumber: floor.floornumber,
+                      totalSeats: floor.totalseats,
+                      floorArea: floor.carpetarea || 0,
+                      seatCounts: {
+                        fixedDesk: 0,
+                        hotDesk: 0,
+                        cafeSeat: 0,
+                        meetingRoomSeat: floor.totalseats
+                      }
+                    }))
+                  };
+                })
+              };
+            })
+          };
+        })
       };
     });
-    setFloors(prev => [...prev, ...newFloors]);
   };
 
   // Search function
@@ -187,49 +282,46 @@ export const PortfolioProvider = ({ children }: Props) => {
     const q = query.toLowerCase();
     const safeString = (val: any) => (val !== undefined && val !== null ? String(val).toLowerCase() : '');
     
-    switch (entityType) {
-      case 'organization':
-        return organizations.filter(o => 
-          safeString(o.name).includes(q) || 
-          safeString(o.organizationid).includes(q)
-        );
-      case 'portfolio':
-        return portfolios.filter(p => 
-          safeString(p.name).includes(q) || 
-          safeString(p.portfolioid).includes(q)
-        );
-      case 'campus':
-        return campuses.filter(c => 
-          safeString(c.name).includes(q) || 
-          safeString(c.campusid).includes(q) ||
-          safeString(c.city).includes(q) ||
-          safeString(c.country).includes(q)
-        );
-      case 'building':
-        return buildings.filter(b => 
-          safeString(b.name).includes(q) || 
-          safeString(b.buildingid).includes(q)
-        );
-      case 'floor':
-        return floors.filter(f => 
-          safeString(f.floornumber).includes(q) || 
-          safeString(f.floorid).includes(q)
-        );
-      case 'seatZone':
-        return seatZones.filter(s => 
-          safeString(s.name).includes(q) || 
-          safeString(s.seatzoneid).includes(q)
-        );
-      default:
-        return [
-          ...organizations.filter(o => safeString(o.name).includes(q)),
-          ...portfolios.filter(p => safeString(p.name).includes(q)),
-          ...campuses.filter(c => safeString(c.name).includes(q)),
-          ...buildings.filter(b => safeString(b.name).includes(q)),
-          ...floors.filter(f => safeString(f.floornumber).includes(q)),
-          ...seatZones.filter(s => safeString(s.name).includes(q)),
-        ];
+    const results: any[] = [];
+    
+    if (!entityType || entityType === 'all' || entityType === 'organization') {
+      organizations.filter(o => 
+        safeString(o.name).includes(q) || 
+        safeString(o.organizationid).includes(q)
+      ).forEach(o => results.push({ ...o, entityType: 'organization' }));
     }
+    
+    if (!entityType || entityType === 'all' || entityType === 'portfolio') {
+      portfolios.filter(p => 
+        safeString(p.name).includes(q) || 
+        safeString(p.portfolioid).includes(q)
+      ).forEach(p => results.push({ ...p, entityType: 'portfolio' }));
+    }
+    
+    if (!entityType || entityType === 'all' || entityType === 'campus') {
+      campuses.filter(c => 
+        safeString(c.name).includes(q) || 
+        safeString(c.campusid).includes(q) ||
+        safeString(c.city).includes(q) ||
+        safeString(c.country).includes(q)
+      ).forEach(c => results.push({ ...c, entityType: 'campus' }));
+    }
+    
+    if (!entityType || entityType === 'all' || entityType === 'building') {
+      buildings.filter(b => 
+        safeString(b.name).includes(q) || 
+        safeString(b.buildingid).includes(q)
+      ).forEach(b => results.push({ ...b, buildingName: b.name, entityType: 'building' }));
+    }
+    
+    if (!entityType || entityType === 'all' || entityType === 'floor') {
+      floors.filter(f => 
+        safeString(f.floornumber).includes(q) || 
+        safeString(f.floorid).includes(q)
+      ).forEach(f => results.push({ ...f, entityType: 'floor' }));
+    }
+    
+    return results;
   };
 
   return (
@@ -241,19 +333,27 @@ export const PortfolioProvider = ({ children }: Props) => {
         buildings,
         floors,
         seatZones,
-        createOrganization: org => setOrganizations(prev => [...prev, org]),
+        loading,
+        error,
+        setOrganizations,
+        setPortfolios,
+        setCampuses,
+        setBuildings,
+        setFloors,
+        setSeatZones,
+        createOrganization,
         updateOrganization: org => setOrganizations(prev => prev.map(o => (o.id === org.id ? org : o))),
         deleteOrganization: id => setOrganizations(prev => prev.filter(o => o.id !== id)),
-        createPortfolio: p => setPortfolios(prev => [...prev, p]),
+        createPortfolio,
         updatePortfolio: p => setPortfolios(prev => prev.map(pf => (pf.id === p.id ? p : pf))),
         deletePortfolio: id => setPortfolios(prev => prev.filter(p => p.id !== id)),
-        createCampus: c => setCampuses(prev => [...prev, c]),
+        createCampus,
         updateCampus: c => setCampuses(prev => prev.map(cv => (cv.id === c.id ? c : cv))),
         deleteCampus: id => setCampuses(prev => prev.filter(c => c.id !== id)),
-        createBuilding: b => setBuildings(prev => [...prev, b]),
+        createBuilding,
         updateBuilding: b => setBuildings(prev => prev.map(bb => (bb.id === b.id ? b : bb))),
         deleteBuilding: id => setBuildings(prev => prev.filter(b => b.id !== id)),
-        createFloor: f => setFloors(prev => [...prev, f]),
+        createFloor,
         updateFloor: f => setFloors(prev => prev.map(ff => (ff.id === f.id ? f : ff))),
         deleteFloor: id => setFloors(prev => prev.filter(f => f.id !== id)),
         createSeatZone: s => setSeatZones(prev => [...prev, s]),
@@ -265,6 +365,13 @@ export const PortfolioProvider = ({ children }: Props) => {
         bulkImportBuildings,
         bulkImportFloors,
         searchEntities,
+        getOrganizationHierarchy,
+        getOrganizationById,
+        getPortfolioById,
+        getCampusById,
+        getBuildingById,
+        getFloorById,
+        fetchAllData,
       }}
     >
       {children}
