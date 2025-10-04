@@ -34,13 +34,12 @@ interface PortfolioContextType {
   createSeatZone: (s: SeatZone) => void;
   updateSeatZone: (s: SeatZone) => void;
   deleteSeatZone: (id: string) => void;
-  bulkImportOrganizations: (data: Organization[]) => void;
-  bulkImportPortfolios: (data: Portfolio[]) => void;
+  bulkImportOrganizations: (data: any[]) => void;
+  bulkImportPortfolios: (data: any[]) => void;
   bulkImportCampuses: (data: any[]) => void;
   bulkImportBuildings: (data: any[]) => void;
   bulkImportFloors: (data: any[]) => void;
   searchEntities: (query: string, entityType?: string) => any[];
-  // ...add hierarchy/get functions here if needed
 }
 
 export const PortfolioContext = createContext<PortfolioContextType>({} as PortfolioContextType);
@@ -57,66 +56,178 @@ export const PortfolioProvider = ({ children }: Props) => {
   const [floors, setFloors] = useState<Floor[]>([]);
   const [seatZones, setSeatZones] = useState<SeatZone[]>([]);
 
-  // Generic bulk import function
-  const bulkImportEntities = (data: any[], type: 'campus' | 'building' | 'floor') => {
-    const newItems = data.map(item => {
-      let extra: any = {};
-      if (type === 'campus') {
-        const portfolio = portfolios.find(p => p.id === item.portfolioId);
-        extra = { campusId: generateCampusId(portfolio?.countryCode || 'XX') };
-      } else if (type === 'building') {
-        const campus = campuses.find(c => c.id === item.campusId);
-        extra = { buildingId: generateBuildingId(campus?.campusId || 'XX-000', item.buildingCode) };
-      } else if (type === 'floor') {
-        const building = buildings.find(b => b.id === item.buildingId);
-        extra = {
-          floorId: generateFloorId(building?.buildingId || 'XX-000-XX', item.floorNumber),
-          totalSeats: Object.values(item.seatCounts || {}).reduce((sum, count) => sum + Number(count), 0)
-        };
+  // Bulk import for Organizations
+  const bulkImportOrganizations = (data: any[]) => {
+    const newOrgs = data.map(item => ({
+      id: uuidv4(),
+      organizationid: item.organizationid || `ORG-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      name: item.name,
+      description: item.description || null,
+      headquarters: item.headquarters || null,
+      website: item.website || null,
+      country_code: item.country_code || null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
+    }));
+    setOrganizations(prev => [...prev, ...newOrgs]);
+  };
+
+  // Bulk import for Portfolios
+  const bulkImportPortfolios = (data: any[]) => {
+    const newPortfolios = data.map(item => {
+      // Find the organization by either id or organizationid
+      const org = organizations.find(o => 
+        o.id === item.organizationid || 
+        o.organizationid === item.organizationid
+      );
+
+      return {
+        id: uuidv4(),
+        portfolioid: item.portfolioid || `PF-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        organizationid: org?.id || item.organizationid,
+        name: item.name,
+        description: item.description || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    });
+    setPortfolios(prev => [...prev, ...newPortfolios]);
+  };
+
+  // Bulk import for Campuses
+  const bulkImportCampuses = (data: any[]) => {
+    const newCampuses = data.map(item => {
+      // Find the portfolio by either id or portfolioid
+      const portfolio = portfolios.find(p => 
+        p.id === item.portfolioid || 
+        p.portfolioid === item.portfolioid
+      );
+
+      // Get country code from portfolio's organization if available
+      const org = organizations.find(o => o.id === portfolio?.organizationid);
+      const countryCode = item.country_code || org?.country_code || 'XX';
+
+      return {
+        id: uuidv4(),
+        campusid: item.campusid || generateCampusId(countryCode),
+        portfolioid: portfolio?.id || item.portfolioid,
+        name: item.name,
+        country: item.country,
+        city: item.city,
+        address: item.address || null,
+        city_id: item.city_id || null,
+        status: item.status || 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    });
+    setCampuses(prev => [...prev, ...newCampuses]);
+  };
+
+  // Bulk import for Buildings
+  const bulkImportBuildings = (data: any[]) => {
+    const newBuildings = data.map(item => {
+      // Find the campus by either id or campusid
+      const campus = campuses.find(c => 
+        c.id === item.campusid || 
+        c.campusid === item.campusid
+      );
+
+      const buildingCode = item.buildingCode || item.code || 'BLD';
+
+      return {
+        id: uuidv4(),
+        buildingid: item.buildingid || generateBuildingId(campus?.campusid || 'XX-000', buildingCode),
+        campusid: campus?.id || item.campusid,
+        name: item.name,
+        totalareacarpet: item.totalareacarpet || 0,
+        totalfloors: item.totalfloors || 0,
+        status: item.status || 'active',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    });
+    setBuildings(prev => [...prev, ...newBuildings]);
+  };
+
+  // Bulk import for Floors
+  const bulkImportFloors = (data: any[]) => {
+    const newFloors = data.map(item => {
+      // Find the building by either id or buildingid
+      const building = buildings.find(b => 
+        b.id === item.buildingid || 
+        b.buildingid === item.buildingid
+      );
+
+      // Calculate total seats from seatCounts if provided
+      let totalSeats = item.totalseats || 0;
+      if (item.seatCounts && typeof item.seatCounts === 'object') {
+        totalSeats = Object.values(item.seatCounts).reduce(
+          (sum: number, count) => sum + Number(count || 0), 
+          0
+        );
       }
 
       return {
-        ...item,
         id: uuidv4(),
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        ...extra
+        floorid: item.floorid || generateFloorId(building?.buildingid || 'XX-000-XX', item.floornumber),
+        buildingid: building?.id || item.buildingid,
+        floornumber: item.floornumber,
+        totalseats: totalSeats,
+        carpetarea: item.carpetarea || null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
     });
-
-    if (type === 'campus') setCampuses(prev => [...prev, ...newItems]);
-    if (type === 'building') setBuildings(prev => [...prev, ...newItems]);
-    if (type === 'floor') setFloors(prev => [...prev, ...newItems]);
+    setFloors(prev => [...prev, ...newFloors]);
   };
 
-  const bulkImportCampuses = (data: any[]) => bulkImportEntities(data, 'campus');
-  const bulkImportBuildings = (data: any[]) => bulkImportEntities(data, 'building');
-  const bulkImportFloors = (data: any[]) => bulkImportEntities(data, 'floor');
-
+  // Search function
   const searchEntities = (query: string, entityType?: string) => {
     const q = query.toLowerCase();
     const safeString = (val: any) => (val !== undefined && val !== null ? String(val).toLowerCase() : '');
+    
     switch (entityType) {
       case 'organization':
-        return organizations.filter(o => safeString(o.name).includes(q));
+        return organizations.filter(o => 
+          safeString(o.name).includes(q) || 
+          safeString(o.organizationid).includes(q)
+        );
       case 'portfolio':
-        return portfolios.filter(p => safeString(p.name).includes(q));
+        return portfolios.filter(p => 
+          safeString(p.name).includes(q) || 
+          safeString(p.portfolioid).includes(q)
+        );
       case 'campus':
-        return campuses.filter(c => safeString(c.name).includes(q));
+        return campuses.filter(c => 
+          safeString(c.name).includes(q) || 
+          safeString(c.campusid).includes(q) ||
+          safeString(c.city).includes(q) ||
+          safeString(c.country).includes(q)
+        );
       case 'building':
-        return buildings.filter(b => safeString(b.buildingName).includes(q));
+        return buildings.filter(b => 
+          safeString(b.name).includes(q) || 
+          safeString(b.buildingid).includes(q)
+        );
       case 'floor':
-        return floors.filter(f => safeString(f.floorNumber).includes(q));
+        return floors.filter(f => 
+          safeString(f.floornumber).includes(q) || 
+          safeString(f.floorid).includes(q)
+        );
       case 'seatZone':
-        return seatZones.filter(s => safeString(s.type).includes(q));
+        return seatZones.filter(s => 
+          safeString(s.name).includes(q) || 
+          safeString(s.seatzoneid).includes(q)
+        );
       default:
         return [
           ...organizations.filter(o => safeString(o.name).includes(q)),
           ...portfolios.filter(p => safeString(p.name).includes(q)),
           ...campuses.filter(c => safeString(c.name).includes(q)),
-          ...buildings.filter(b => safeString(b.buildingName).includes(q)),
-          ...floors.filter(f => safeString(f.floorNumber).includes(q)),
-          ...seatZones.filter(s => safeString(s.type).includes(q)),
+          ...buildings.filter(b => safeString(b.name).includes(q)),
+          ...floors.filter(f => safeString(f.floornumber).includes(q)),
+          ...seatZones.filter(s => safeString(s.name).includes(q)),
         ];
     }
   };
@@ -148,8 +259,8 @@ export const PortfolioProvider = ({ children }: Props) => {
         createSeatZone: s => setSeatZones(prev => [...prev, s]),
         updateSeatZone: s => setSeatZones(prev => prev.map(ss => (ss.id === s.id ? s : ss))),
         deleteSeatZone: id => setSeatZones(prev => prev.filter(s => s.id !== id)),
-        bulkImportOrganizations: (data: Organization[]) => setOrganizations(prev => [...prev, ...data]),
-        bulkImportPortfolios: (data: Portfolio[]) => setPortfolios(prev => [...prev, ...data]),
+        bulkImportOrganizations,
+        bulkImportPortfolios,
         bulkImportCampuses,
         bulkImportBuildings,
         bulkImportFloors,
