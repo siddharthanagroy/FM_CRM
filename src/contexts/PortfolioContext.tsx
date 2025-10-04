@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
 
 export interface Organization {
   id: string;
@@ -435,188 +436,616 @@ const mockSeatZones: SeatZone[] = [
 ];
 
 export const PortfolioProvider = ({ children }: { children: ReactNode }) => {
-  const [organizations, setOrganizations] = useState<Organization[]>(mockOrganizations);
-  const [portfolios, setPortfolios] = useState<Portfolio[]>(mockPortfolios);
-  const [campuses, setCampuses] = useState<Campus[]>(mockCampuses);
-  const [buildings, setBuildings] = useState<Building[]>(mockBuildings);
-  const [floors, setFloors] = useState<Floor[]>(mockFloors);
-  const [seatZones, setSeatZones] = useState<SeatZone[]>(mockSeatZones);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [campuses, setCampuses] = useState<Campus[]>([]);
+  const [buildings, setBuildings] = useState<Building[]>([]);
+  const [floors, setFloors] = useState<Floor[]>([]);
+  const [seatZones, setSeatZones] = useState<SeatZone[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Organization operations
-  const createOrganization = (organizationData: Omit<Organization, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>) => {
-    const newOrganization: Organization = {
-      ...organizationData,
-      id: Date.now().toString(),
-      organizationId: generateOrganizationId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setOrganizations(prev => [newOrganization, ...prev]);
-  };
+  useEffect(() => {
+    fetchAllData();
+  }, []);
 
-  const updateOrganization = (id: string, updates: Partial<Organization>) => {
-    setOrganizations(prev => prev.map(organization => 
-      organization.id === id 
-        ? { ...organization, ...updates, updatedAt: new Date().toISOString() }
-        : organization
-    ));
-  };
-
-  const deleteOrganization = (id: string) => {
-    setOrganizations(prev => prev.filter(organization => organization.id !== id));
-    // Also delete related portfolios
-    setPortfolios(prev => prev.filter(portfolio => portfolio.organizationId !== id));
-  };
-
-  // Portfolio operations
-  const createPortfolio = (portfolioData: Omit<Portfolio, 'id' | 'portfolioId' | 'createdAt' | 'updatedAt'>) => {
-    const newPortfolio: Portfolio = {
-      ...portfolioData,
-      id: Date.now().toString(),
-      portfolioId: generatePortfolioId(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setPortfolios(prev => [newPortfolio, ...prev]);
-  };
-
-  const updatePortfolio = (id: string, updates: Partial<Portfolio>) => {
-    setPortfolios(prev => prev.map(portfolio => 
-      portfolio.id === id 
-        ? { ...portfolio, ...updates, updatedAt: new Date().toISOString() }
-        : portfolio
-    ));
-  };
-
-  const deletePortfolio = (id: string) => {
-    setPortfolios(prev => prev.filter(portfolio => portfolio.id !== id));
-    // Also delete related campuses
-    const portfolioToDelete = portfolios.find(p => p.id === id);
-    if (portfolioToDelete) {
-      setCampuses(prev => prev.filter(campus => campus.portfolioId !== id));
+  const fetchAllData = async () => {
+    try {
+      setLoading(true);
+      await Promise.all([
+        fetchOrganizations(),
+        fetchPortfolios(),
+        fetchCampuses(),
+        fetchBuildings(),
+        fetchFloors(),
+        fetchSeatZones(),
+      ]);
+    } catch (error) {
+      console.error('Error fetching portfolio data:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
+  const fetchOrganizations = async () => {
+    const { data, error } = await supabase
+      .from('organizations')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching organizations:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map(org => ({
+        id: org.id,
+        organizationId: org.organizationid,
+        name: org.name,
+        description: org.description,
+        headquarters: org.headquarters,
+        website: org.website,
+        createdAt: org.created_at,
+        updatedAt: org.updated_at,
+      }));
+      setOrganizations(mapped);
+    }
+  };
+
+  const fetchPortfolios = async () => {
+    const { data, error } = await supabase
+      .from('portfolios')
+      .select(`
+        *,
+        organizations!inner (
+          id,
+          organizationid,
+          name,
+          countries (
+            name,
+            code,
+            region
+          )
+        )
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching portfolios:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map((p: any) => ({
+        id: p.id,
+        portfolioId: p.portfolioid,
+        organizationId: p.organizationid,
+        name: p.name,
+        region: p.organizations?.countries?.region || 'Unknown',
+        country: p.organizations?.countries?.name || 'Unknown',
+        countryCode: p.organizations?.countries?.code || 'XX',
+        createdAt: p.created_at,
+        updatedAt: p.updated_at,
+      }));
+      setPortfolios(mapped);
+    }
+  };
+
+  const fetchCampuses = async () => {
+    const { data, error } = await supabase
+      .from('campuses')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching campuses:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map(c => ({
+        id: c.id,
+        campusId: c.campusid,
+        portfolioId: c.portfolioid,
+        name: c.name,
+        city: c.city,
+        address: c.address,
+        gpsCoordinates: c.gps_coordinates,
+        type: c.type || 'traditional_office',
+        status: c.status || 'active',
+        totalParkingSlots2W: c.total_parking_slots_2w,
+        totalParkingSlots4W: c.total_parking_slots_4w,
+        totalParkingEVSlots: c.total_parking_ev_slots,
+        amenities: c.amenities || [],
+        greenInfrastructure: c.green_infrastructure || {
+          hasSolar: false,
+          hasRainwaterHarvesting: false,
+          hasSTP: false,
+        },
+        bcpDrSpaceAvailable: c.bcp_dr_space_available || false,
+        createdAt: c.created_at,
+        updatedAt: c.updated_at,
+      }));
+      setCampuses(mapped);
+    }
+  };
+
+  const fetchBuildings = async () => {
+    const { data, error } = await supabase
+      .from('buildings')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching buildings:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map(b => ({
+        id: b.id,
+        buildingId: b.buildingid,
+        campusId: b.campusid,
+        buildingName: b.building_name,
+        buildingCode: b.building_code,
+        aliasName: b.alias_name,
+        totalAreaBUA: b.total_area_bua,
+        totalAreaRA: b.total_area_ra,
+        totalAreaCarpet: b.total_area_carpet,
+        numberOfFloors: b.number_of_floors,
+        ownershipType: b.ownership_type || 'leased',
+        leaseDetails: b.lease_details,
+        status: b.status || 'active',
+        parkingAllocation2W: b.parking_allocation_2w,
+        parkingAllocation4W: b.parking_allocation_4w,
+        parkingAllocationEV: b.parking_allocation_ev,
+        createdAt: b.created_at,
+        updatedAt: b.updated_at,
+      }));
+      setBuildings(mapped);
+    }
+  };
+
+  const fetchFloors = async () => {
+    const { data, error } = await supabase
+      .from('floors')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching floors:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map(f => ({
+        id: f.id,
+        floorId: f.floorid,
+        buildingId: f.buildingid,
+        floorNumber: f.floor_number,
+        floorArea: f.floor_area,
+        seatCounts: f.seat_counts || {
+          fixedDesk: 0,
+          hotDesk: 0,
+          cafeSeat: 0,
+          meetingRoomSeat: 0,
+        },
+        totalSeats: f.total_seats || 0,
+        parkingAllocation2W: f.parking_allocation_2w,
+        parkingAllocation4W: f.parking_allocation_4w,
+        parkingAllocationEV: f.parking_allocation_ev,
+        amenities: f.amenities || [],
+        createdAt: f.created_at,
+        updatedAt: f.updated_at,
+      }));
+      setFloors(mapped);
+    }
+  };
+
+  const fetchSeatZones = async () => {
+    const { data, error } = await supabase
+      .from('seat_zones')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching seat zones:', error);
+      return;
+    }
+
+    if (data) {
+      const mapped = data.map(s => ({
+        id: s.id,
+        seatZoneId: s.seat_zone_id,
+        floorId: s.floorid,
+        type: s.type || 'permanent_desk',
+        occupancyStatus: s.occupancy_status || 'free',
+        assignedTo: s.assigned_to,
+        assignedEmail: s.assigned_email,
+        createdAt: s.created_at,
+        updatedAt: s.updated_at,
+      }));
+      setSeatZones(mapped);
+    }
+  };
+
+  // Organization operations
+  const createOrganization = async (organizationData: Omit<Organization, 'id' | 'organizationId' | 'createdAt' | 'updatedAt'>) => {
+    const newOrgId = generateOrganizationId();
+
+    const { error } = await supabase
+      .from('organizations')
+      .insert({
+        organizationid: newOrgId,
+        name: organizationData.name,
+        description: organizationData.description,
+        headquarters: organizationData.headquarters,
+        website: organizationData.website,
+      });
+
+    if (error) {
+      console.error('Error creating organization:', error);
+      return;
+    }
+
+    await fetchOrganizations();
+  };
+
+  const updateOrganization = async (id: string, updates: Partial<Organization>) => {
+    const { error } = await supabase
+      .from('organizations')
+      .update({
+        name: updates.name,
+        description: updates.description,
+        headquarters: updates.headquarters,
+        website: updates.website,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating organization:', error);
+      return;
+    }
+
+    await fetchOrganizations();
+  };
+
+  const deleteOrganization = async (id: string) => {
+    const { error } = await supabase
+      .from('organizations')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting organization:', error);
+      return;
+    }
+
+    await fetchOrganizations();
+    await fetchPortfolios();
+  };
+
+  // Portfolio operations
+  const createPortfolio = async (portfolioData: Omit<Portfolio, 'id' | 'portfolioId' | 'createdAt' | 'updatedAt'>) => {
+    const newPortfolioId = generatePortfolioId();
+
+    const { error } = await supabase
+      .from('portfolios')
+      .insert({
+        portfolioid: newPortfolioId,
+        organizationid: portfolioData.organizationId,
+        name: portfolioData.name,
+      });
+
+    if (error) {
+      console.error('Error creating portfolio:', error);
+      return;
+    }
+
+    await fetchPortfolios();
+  };
+
+  const updatePortfolio = async (id: string, updates: Partial<Portfolio>) => {
+    const { error } = await supabase
+      .from('portfolios')
+      .update({
+        name: updates.name,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating portfolio:', error);
+      return;
+    }
+
+    await fetchPortfolios();
+  };
+
+  const deletePortfolio = async (id: string) => {
+    const { error } = await supabase
+      .from('portfolios')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting portfolio:', error);
+      return;
+    }
+
+    await fetchPortfolios();
+    await fetchCampuses();
+  };
+
   // Campus operations
-  const createCampus = (campusData: Omit<Campus, 'id' | 'campusId' | 'createdAt' | 'updatedAt'>) => {
+  const createCampus = async (campusData: Omit<Campus, 'id' | 'campusId' | 'createdAt' | 'updatedAt'>) => {
     const portfolio = portfolios.find(p => p.id === campusData.portfolioId);
     if (!portfolio) return;
 
-    const newCampus: Campus = {
-      ...campusData,
-      id: Date.now().toString(),
-      campusId: generateCampusId(portfolio.countryCode),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setCampuses(prev => [newCampus, ...prev]);
+    const newCampusId = generateCampusId(portfolio.countryCode);
+
+    const { error } = await supabase
+      .from('campuses')
+      .insert({
+        campusid: newCampusId,
+        portfolioid: campusData.portfolioId,
+        name: campusData.name,
+        city: campusData.city,
+        address: campusData.address,
+        gps_coordinates: campusData.gpsCoordinates,
+        type: campusData.type,
+        status: campusData.status,
+        total_parking_slots_2w: campusData.totalParkingSlots2W,
+        total_parking_slots_4w: campusData.totalParkingSlots4W,
+        total_parking_ev_slots: campusData.totalParkingEVSlots,
+        amenities: campusData.amenities,
+        green_infrastructure: campusData.greenInfrastructure,
+        bcp_dr_space_available: campusData.bcpDrSpaceAvailable,
+      });
+
+    if (error) {
+      console.error('Error creating campus:', error);
+      return;
+    }
+
+    await fetchCampuses();
   };
 
-  const updateCampus = (id: string, updates: Partial<Campus>) => {
-    setCampuses(prev => prev.map(campus => 
-      campus.id === id 
-        ? { ...campus, ...updates, updatedAt: new Date().toISOString() }
-        : campus
-    ));
+  const updateCampus = async (id: string, updates: Partial<Campus>) => {
+    const { error } = await supabase
+      .from('campuses')
+      .update({
+        name: updates.name,
+        city: updates.city,
+        address: updates.address,
+        type: updates.type,
+        status: updates.status,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating campus:', error);
+      return;
+    }
+
+    await fetchCampuses();
   };
 
-  const deleteCampus = (id: string) => {
-    setCampuses(prev => prev.filter(campus => campus.id !== id));
-    // Also delete related buildings
-    setBuildings(prev => prev.filter(building => building.campusId !== id));
+  const deleteCampus = async (id: string) => {
+    const { error } = await supabase
+      .from('campuses')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting campus:', error);
+      return;
+    }
+
+    await fetchCampuses();
+    await fetchBuildings();
   };
 
   // Building operations
-  const createBuilding = (buildingData: Omit<Building, 'id' | 'buildingId' | 'createdAt' | 'updatedAt'>) => {
+  const createBuilding = async (buildingData: Omit<Building, 'id' | 'buildingId' | 'createdAt' | 'updatedAt'>) => {
     const campus = campuses.find(c => c.id === buildingData.campusId);
     if (!campus) return;
 
-    const newBuilding: Building = {
-      ...buildingData,
-      id: Date.now().toString(),
-      buildingId: generateBuildingId(campus.campusId, buildingData.buildingCode),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setBuildings(prev => [newBuilding, ...prev]);
+    const newBuildingId = generateBuildingId(campus.campusId, buildingData.buildingCode);
+
+    const { error } = await supabase
+      .from('buildings')
+      .insert({
+        buildingid: newBuildingId,
+        campusid: buildingData.campusId,
+        building_name: buildingData.buildingName,
+        building_code: buildingData.buildingCode,
+        alias_name: buildingData.aliasName,
+        total_area_bua: buildingData.totalAreaBUA,
+        total_area_ra: buildingData.totalAreaRA,
+        total_area_carpet: buildingData.totalAreaCarpet,
+        number_of_floors: buildingData.numberOfFloors,
+        ownership_type: buildingData.ownershipType,
+        lease_details: buildingData.leaseDetails,
+        status: buildingData.status,
+        parking_allocation_2w: buildingData.parkingAllocation2W,
+        parking_allocation_4w: buildingData.parkingAllocation4W,
+        parking_allocation_ev: buildingData.parkingAllocationEV,
+      });
+
+    if (error) {
+      console.error('Error creating building:', error);
+      return;
+    }
+
+    await fetchBuildings();
   };
 
-  const updateBuilding = (id: string, updates: Partial<Building>) => {
-    setBuildings(prev => prev.map(building => 
-      building.id === id 
-        ? { ...building, ...updates, updatedAt: new Date().toISOString() }
-        : building
-    ));
+  const updateBuilding = async (id: string, updates: Partial<Building>) => {
+    const { error } = await supabase
+      .from('buildings')
+      .update({
+        building_name: updates.buildingName,
+        status: updates.status,
+        ownership_type: updates.ownershipType,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating building:', error);
+      return;
+    }
+
+    await fetchBuildings();
   };
 
-  const deleteBuilding = (id: string) => {
-    setBuildings(prev => prev.filter(building => building.id !== id));
-    // Also delete related floors
-    setFloors(prev => prev.filter(floor => floor.buildingId !== id));
+  const deleteBuilding = async (id: string) => {
+    const { error } = await supabase
+      .from('buildings')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting building:', error);
+      return;
+    }
+
+    await fetchBuildings();
+    await fetchFloors();
   };
 
   // Floor operations
-  const createFloor = (floorData: Omit<Floor, 'id' | 'floorId' | 'createdAt' | 'updatedAt' | 'totalSeats'>) => {
+  const createFloor = async (floorData: Omit<Floor, 'id' | 'floorId' | 'createdAt' | 'updatedAt' | 'totalSeats'>) => {
     const building = buildings.find(b => b.id === floorData.buildingId);
     if (!building) return;
 
     const totalSeats = Object.values(floorData.seatCounts).reduce((sum, count) => sum + count, 0);
+    const newFloorId = generateFloorId(building.buildingId, floorData.floorNumber);
 
-    const newFloor: Floor = {
-      ...floorData,
-      id: Date.now().toString(),
-      floorId: generateFloorId(building.buildingId, floorData.floorNumber),
-      totalSeats,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+    const { error } = await supabase
+      .from('floors')
+      .insert({
+        floorid: newFloorId,
+        buildingid: floorData.buildingId,
+        floor_number: floorData.floorNumber,
+        floor_area: floorData.floorArea,
+        seat_counts: floorData.seatCounts,
+        total_seats: totalSeats,
+        parking_allocation_2w: floorData.parkingAllocation2W,
+        parking_allocation_4w: floorData.parkingAllocation4W,
+        parking_allocation_ev: floorData.parkingAllocationEV,
+        amenities: floorData.amenities,
+      });
+
+    if (error) {
+      console.error('Error creating floor:', error);
+      return;
+    }
+
+    await fetchFloors();
+  };
+
+  const updateFloor = async (id: string, updates: Partial<Floor>) => {
+    const updateData: any = {
+      updated_at: new Date().toISOString(),
     };
-    setFloors(prev => [newFloor, ...prev]);
+
+    if (updates.floorNumber) updateData.floor_number = updates.floorNumber;
+    if (updates.floorArea) updateData.floor_area = updates.floorArea;
+    if (updates.seatCounts) {
+      updateData.seat_counts = updates.seatCounts;
+      updateData.total_seats = Object.values(updates.seatCounts).reduce((sum, count) => sum + count, 0);
+    }
+
+    const { error } = await supabase
+      .from('floors')
+      .update(updateData)
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating floor:', error);
+      return;
+    }
+
+    await fetchFloors();
   };
 
-  const updateFloor = (id: string, updates: Partial<Floor>) => {
-    setFloors(prev => prev.map(floor => {
-      if (floor.id === id) {
-        const updatedFloor = { ...floor, ...updates, updatedAt: new Date().toISOString() };
-        if (updates.seatCounts) {
-          updatedFloor.totalSeats = Object.values(updatedFloor.seatCounts).reduce((sum, count) => sum + count, 0);
-        }
-        return updatedFloor;
-      }
-      return floor;
-    }));
-  };
+  const deleteFloor = async (id: string) => {
+    const { error } = await supabase
+      .from('floors')
+      .delete()
+      .eq('id', id);
 
-  const deleteFloor = (id: string) => {
-    setFloors(prev => prev.filter(floor => floor.id !== id));
-    // Also delete related seat zones
-    setSeatZones(prev => prev.filter(seatZone => seatZone.floorId !== id));
+    if (error) {
+      console.error('Error deleting floor:', error);
+      return;
+    }
+
+    await fetchFloors();
+    await fetchSeatZones();
   };
 
   // Seat/Zone operations
-  const createSeatZone = (seatZoneData: Omit<SeatZone, 'id' | 'seatZoneId' | 'createdAt' | 'updatedAt'>) => {
+  const createSeatZone = async (seatZoneData: Omit<SeatZone, 'id' | 'seatZoneId' | 'createdAt' | 'updatedAt'>) => {
     const floor = floors.find(f => f.id === seatZoneData.floorId);
     if (!floor) return;
 
-    const newSeatZone: SeatZone = {
-      ...seatZoneData,
-      id: Date.now().toString(),
-      seatZoneId: generateSeatZoneId(floor.floorId),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    setSeatZones(prev => [newSeatZone, ...prev]);
+    const newSeatZoneId = generateSeatZoneId(floor.floorId);
+
+    const { error } = await supabase
+      .from('seat_zones')
+      .insert({
+        seat_zone_id: newSeatZoneId,
+        floorid: seatZoneData.floorId,
+        type: seatZoneData.type,
+        occupancy_status: seatZoneData.occupancyStatus,
+        assigned_to: seatZoneData.assignedTo,
+        assigned_email: seatZoneData.assignedEmail,
+      });
+
+    if (error) {
+      console.error('Error creating seat zone:', error);
+      return;
+    }
+
+    await fetchSeatZones();
   };
 
-  const updateSeatZone = (id: string, updates: Partial<SeatZone>) => {
-    setSeatZones(prev => prev.map(seatZone => 
-      seatZone.id === id 
-        ? { ...seatZone, ...updates, updatedAt: new Date().toISOString() }
-        : seatZone
-    ));
+  const updateSeatZone = async (id: string, updates: Partial<SeatZone>) => {
+    const { error } = await supabase
+      .from('seat_zones')
+      .update({
+        type: updates.type,
+        occupancy_status: updates.occupancyStatus,
+        assigned_to: updates.assignedTo,
+        assigned_email: updates.assignedEmail,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error updating seat zone:', error);
+      return;
+    }
+
+    await fetchSeatZones();
   };
 
-  const deleteSeatZone = (id: string) => {
-    setSeatZones(prev => prev.filter(seatZone => seatZone.id !== id));
+  const deleteSeatZone = async (id: string) => {
+    const { error } = await supabase
+      .from('seat_zones')
+      .delete()
+      .eq('id', id);
+
+    if (error) {
+      console.error('Error deleting seat zone:', error);
+      return;
+    }
+
+    await fetchSeatZones();
   };
 
   // Utility functions

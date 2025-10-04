@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3 } from 'lucide-react';
+import { Building2, Plus, Search, Filter, Download, Upload, Map, BarChart3, ChevronRight } from 'lucide-react';
 import { usePortfolio } from '../../contexts/PortfolioContext';
 import { useAuth } from '../../contexts/AuthContext';
 import PortfolioHierarchy from './PortfolioHierarchy';
@@ -10,26 +10,35 @@ import CreateCampusModal from './CreateCampusModal';
 import CreateBuildingModal from './CreateBuildingModal';
 import CreateFloorModal from './CreateFloorModal';
 import BulkImportModal from './BulkImportModal';
+import OfficeSelector from './OfficeSelector';
 import Papa from 'papaparse';
 
 const Portfolio = () => {
-  const { 
+  const {
     organizations,
-    portfolios, 
-    campuses, 
-    buildings, 
-    floors, 
+    portfolios,
+    campuses,
+    buildings,
+    floors,
     seatZones,
-    searchEntities 
+    searchEntities
   } = usePortfolio();
   const { user } = useAuth();
-  
+
   const [activeTab, setActiveTab] = useState<'hierarchy' | 'dashboard'>('hierarchy');
   const [searchTerm, setSearchTerm] = useState('');
   const [entityFilter, setEntityFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState<string | null>(null);
   const [showBulkImportModal, setShowBulkImportModal] = useState(false);
   const [selectedEntity, setSelectedEntity] = useState<any>(null);
+  const [showOfficeSelector, setShowOfficeSelector] = useState(false);
+  const [selectedOffice, setSelectedOffice] = useState<{
+    organizationId: string;
+    portfolioId: string;
+    campusId: string;
+    buildingId: string;
+    displayName: string;
+  } | null>(null);
 
   const canManage = user?.role === 'admin' || user?.role === 'fm_manager';
 
@@ -92,19 +101,75 @@ const Portfolio = () => {
     totalArea: buildings.reduce((sum, building) => sum + (building.totalAreaCarpet || 0), 0),
   };
 
+  const getSelectedOfficeDetails = () => {
+    if (!selectedOffice) return null;
+
+    const org = organizations.find(o => o.id === selectedOffice.organizationId);
+    const portfolio = portfolios.find(p => p.id === selectedOffice.portfolioId);
+    const campus = campuses.find(c => c.id === selectedOffice.campusId);
+    const building = buildings.find(b => b.id === selectedOffice.buildingId);
+
+    return { org, portfolio, campus, building };
+  };
+
+  const officeDetails = getSelectedOfficeDetails();
+
+  const handleOfficeSelect = (selection: {
+    organizationId: string;
+    portfolioId: string;
+    campusId: string;
+    buildingId: string;
+    displayName: string;
+  }) => {
+    setSelectedOffice(selection);
+    setShowOfficeSelector(false);
+    localStorage.setItem('selectedOffice', JSON.stringify(selection));
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         {/* Left side */}
-        <div className="min-w-0">
-          <h1 className="text-3xl font-bold text-gray-900 flex items-center">
-            <Building2 className="h-8 w-8 mr-3 text-blue-600" />
-            Portfolio Management
-          </h1>
-          <p className="text-gray-600 truncate">
-            Master data layer for organizations, portfolios, campuses, buildings, and floors
-          </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-3 mb-2">
+            <Building2 className="h-8 w-8 text-blue-600" />
+            <h1 className="text-3xl font-bold text-gray-900">
+              Portfolio Management
+            </h1>
+          </div>
+
+          {selectedOffice && officeDetails && (
+            <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
+              <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
+                <span className="font-medium text-blue-900">Selected Office:</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-blue-800">{officeDetails.org?.name}</span>
+                  <ChevronRight className="h-3 w-3 text-blue-600" />
+                  <span className="text-blue-800">{officeDetails.campus?.name}</span>
+                  <ChevronRight className="h-3 w-3 text-blue-600" />
+                  <span className="text-blue-800">{officeDetails.building?.buildingName}</span>
+                </div>
+                <button
+                  onClick={() => setShowOfficeSelector(true)}
+                  className="ml-2 text-blue-600 hover:text-blue-800 underline text-xs"
+                >
+                  Change
+                </button>
+              </div>
+            </div>
+          )}
+
+          {!selectedOffice && (
+            <div className="mt-2">
+              <button
+                onClick={() => setShowOfficeSelector(true)}
+                className="text-sm text-blue-600 hover:text-blue-800 underline"
+              >
+                Select an office to filter data
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Right side buttons */}
@@ -285,6 +350,12 @@ const Portfolio = () => {
       {showCreateModal === 'building' && <CreateBuildingModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
       {showCreateModal === 'floor' && <CreateFloorModal onClose={() => setShowCreateModal(null)} onCreate={() => setShowCreateModal(null)} />}
       {showBulkImportModal && <BulkImportModal onClose={() => setShowBulkImportModal(false)} />}
+      {showOfficeSelector && (
+        <OfficeSelector
+          onSelect={handleOfficeSelect}
+          onClose={() => setShowOfficeSelector(false)}
+        />
+      )}
     </div>
   );
 };
