@@ -1,8 +1,4 @@
-export interface Country {
-  code: string;
-  name: string;
-  region: string;
-}
+// Database types matching the schema
 
 export interface Organization {
   id: string;
@@ -26,11 +22,64 @@ export interface Portfolio {
   updated_at: string;
 }
 
-export interface PortfolioWithDetails extends Portfolio {
-  organization_name?: string;
-  country_name?: string;
+export interface Campus {
+  id: string;
+  campusid: string;
+  portfolioid: string;
+  name: string;
+  country: string;
+  city: string;
+  address: string | null;
+  city_id: number | null;
+  status: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface OrganizationWithCountry extends Organization {
-  country_name?: string;
+export interface Building {
+  id: string;
+  buildingid: string;
+  campusid: string;
+  name: string;
+  totalareacarpet: number;
+  totalfloors: number;
+  status: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Floor {
+  id: string;
+  floorid: string;
+  buildingid: string;
+  floornumber: number;
+  totalseats: number;
+  carpetarea: number | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SeatZone {
+  id: string;
+  seatzoneid: string;
+  floorid: string;
+  name: string;
+  occupancystatus: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Country {
+  name: string;
+  region: string | null;
+  code: string;
+}
+
+export interface City {
+  id: number;
+  name: string;
+  state: string | null;
+  country_code: string;
+  created_at: string;
+  updated_at: string;
 }
