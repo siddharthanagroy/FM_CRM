@@ -119,9 +119,18 @@ export const PortfolioProvider = ({ children }: Props) => {
 
   // Create functions with Supabase integration
   const createOrganization = async (orgData: any) => {
+    // Transform camelCase to snake_case for database
+    const dbData = {
+      name: orgData.name,
+      description: orgData.description,
+      headquarters: orgData.headquarters,
+      website: orgData.website,
+      country_code: orgData.countryCode || null
+    };
+    
     const { data, error } = await supabase
       .from('organizations')
-      .insert([orgData])
+      .insert([dbData])
       .select();
     
     if (error) throw error;
@@ -129,9 +138,16 @@ export const PortfolioProvider = ({ children }: Props) => {
   };
 
   const createPortfolio = async (portfolioData: any) => {
+    // Transform camelCase to snake_case for database
+    const dbData = {
+      organizationid: portfolioData.organizationId,
+      name: portfolioData.name,
+      description: portfolioData.description || null
+    };
+    
     const { data, error } = await supabase
       .from('portfolios')
-      .insert([portfolioData])
+      .insert([dbData])
       .select();
     
     if (error) throw error;
@@ -139,9 +155,19 @@ export const PortfolioProvider = ({ children }: Props) => {
   };
 
   const createCampus = async (campusData: any) => {
+    // Transform camelCase to snake_case for database
+    const dbData = {
+      portfolioid: campusData.portfolioId,
+      name: campusData.name,
+      country: campusData.country,
+      city: campusData.city,
+      address: campusData.address,
+      status: campusData.status || 'active'
+    };
+    
     const { data, error } = await supabase
       .from('campuses')
-      .insert([campusData])
+      .insert([dbData])
       .select();
     
     if (error) throw error;
@@ -149,9 +175,18 @@ export const PortfolioProvider = ({ children }: Props) => {
   };
 
   const createBuilding = async (buildingData: any) => {
+    // Transform camelCase to snake_case for database
+    const dbData = {
+      campusid: buildingData.campusId,
+      name: buildingData.buildingName,
+      totalareacarpet: buildingData.totalAreaCarpet || 0,
+      totalfloors: buildingData.numberOfFloors || 0,
+      status: buildingData.status || 'active'
+    };
+    
     const { data, error } = await supabase
       .from('buildings')
-      .insert([buildingData])
+      .insert([dbData])
       .select();
     
     if (error) throw error;
@@ -159,9 +194,21 @@ export const PortfolioProvider = ({ children }: Props) => {
   };
 
   const createFloor = async (floorData: any) => {
+    // Calculate total seats from seatCounts
+    const totalSeats = floorData.seatCounts ? 
+      Object.values(floorData.seatCounts).reduce((sum: number, val) => sum + (Number(val) || 0), 0) : 0;
+    
+    // Transform camelCase to snake_case for database
+    const dbData = {
+      buildingid: floorData.buildingId,
+      floornumber: floorData.floorNumber,
+      totalseats: totalSeats,
+      carpetarea: floorData.floorArea || null
+    };
+    
     const { data, error } = await supabase
       .from('floors')
-      .insert([floorData])
+      .insert([dbData])
       .select();
     
     if (error) throw error;
