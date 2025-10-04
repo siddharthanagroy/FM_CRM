@@ -1,5 +1,5 @@
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { supabase } from '../lib/supabase';
 import {
   Portfolio, Organization, Campus, Building, Floor, SeatZone
 } from '../types/database';
