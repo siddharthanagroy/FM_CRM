@@ -94,11 +94,11 @@ const Portfolio = () => {
     totalCampuses: campuses.length,
     totalBuildings: buildings.length,
     totalFloors: floors.length,
-    totalSeats: floors.reduce((sum, floor) => sum + floor.totalSeats, 0),
+    totalSeats: floors.reduce((sum, floor) => sum + (floor.totalseats || 0), 0),
     activeCampuses: campuses.filter(c => c.status === 'active').length,
     activeBuildings: buildings.filter(b => b.status === 'active').length,
-    occupiedSeats: seatZones.filter(s => s.occupancyStatus === 'assigned').length,
-    totalArea: buildings.reduce((sum, building) => sum + (building.totalAreaCarpet || 0), 0),
+    occupiedSeats: seatZones.filter(s => s.occupancystatus === 'assigned').length,
+    totalArea: buildings.reduce((sum, building) => sum + (building.totalareacarpet || 0), 0),
   };
 
   const getSelectedOfficeDetails = () => {
@@ -148,7 +148,7 @@ const Portfolio = () => {
                   <ChevronRight className="h-3 w-3 text-blue-600" />
                   <span className="text-blue-800">{officeDetails.campus?.name}</span>
                   <ChevronRight className="h-3 w-3 text-blue-600" />
-                  <span className="text-blue-800">{officeDetails.building?.buildingName}</span>
+                  <span className="text-blue-800">{officeDetails.building?.name}</span>
                 </div>
                 <button
                   onClick={() => setShowOfficeSelector(true)}
@@ -319,20 +319,20 @@ const Portfolio = () => {
                 >
                   <div>
                     <span className="font-medium">
-                      {result.name || result.buildingName || result.floorNumber || result.seatZoneId || result.organizationId}
+                      {result.name || result.buildingName || result.floornumber || result.seatzoneid || result.organizationid}
                     </span>
                     <span className="ml-2 text-sm text-gray-500">
-                      ({result.entityType}) - {result.organizationId || result.portfolioId || result.campusId || result.buildingId || result.floorId}
+                      ({result.entityType}) - {result.organizationid || result.portfolioid || result.campusid || result.buildingid || result.floorid}
                     </span>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                     result.status === 'active' ? 'bg-green-100 text-green-800' :
                     result.status === 'inactive' ? 'bg-yellow-100 text-yellow-800' :
-                    result.occupancyStatus === 'assigned' ? 'bg-blue-100 text-blue-800' :
-                    result.occupancyStatus === 'free' ? 'bg-gray-100 text-gray-800' :
+                    result.occupancystatus === 'assigned' ? 'bg-blue-100 text-blue-800' :
+                    result.occupancystatus === 'free' ? 'bg-gray-100 text-gray-800' :
                     'bg-gray-100 text-gray-800'
                   }`}>
-                    {result.status || result.occupancyStatus || 'Active'}
+                    {result.status || result.occupancystatus || 'Active'}
                   </span>
                 </div>
               ))}

@@ -324,50 +324,49 @@ export const PortfolioProvider = ({ children }: Props) => {
     });
   };
 
-  // Search function
   const searchEntities = (query: string, entityType?: string) => {
     const q = query.toLowerCase();
     const safeString = (val: any) => (val !== undefined && val !== null ? String(val).toLowerCase() : '');
-    
+
     const results: any[] = [];
-    
+
     if (!entityType || entityType === 'all' || entityType === 'organization') {
-      organizations.filter(o => 
-        safeString(o.name).includes(q) || 
+      organizations.filter(o =>
+        safeString(o.name).includes(q) ||
         safeString(o.organizationid).includes(q)
       ).forEach(o => results.push({ ...o, entityType: 'organization' }));
     }
-    
+
     if (!entityType || entityType === 'all' || entityType === 'portfolio') {
-      portfolios.filter(p => 
-        safeString(p.name).includes(q) || 
+      portfolios.filter(p =>
+        safeString(p.name).includes(q) ||
         safeString(p.portfolioid).includes(q)
       ).forEach(p => results.push({ ...p, entityType: 'portfolio' }));
     }
-    
+
     if (!entityType || entityType === 'all' || entityType === 'campus') {
-      campuses.filter(c => 
-        safeString(c.name).includes(q) || 
+      campuses.filter(c =>
+        safeString(c.name).includes(q) ||
         safeString(c.campusid).includes(q) ||
         safeString(c.city).includes(q) ||
         safeString(c.country).includes(q)
       ).forEach(c => results.push({ ...c, entityType: 'campus' }));
     }
-    
+
     if (!entityType || entityType === 'all' || entityType === 'building') {
-      buildings.filter(b => 
-        safeString(b.name).includes(q) || 
+      buildings.filter(b =>
+        safeString(b.name).includes(q) ||
         safeString(b.buildingid).includes(q)
       ).forEach(b => results.push({ ...b, buildingName: b.name, entityType: 'building' }));
     }
-    
+
     if (!entityType || entityType === 'all' || entityType === 'floor') {
-      floors.filter(f => 
-        safeString(f.floornumber).includes(q) || 
+      floors.filter(f =>
+        safeString(f.floornumber).includes(q) ||
         safeString(f.floorid).includes(q)
       ).forEach(f => results.push({ ...f, entityType: 'floor' }));
     }
-    
+
     return results;
   };
 

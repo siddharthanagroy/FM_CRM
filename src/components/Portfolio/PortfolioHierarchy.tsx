@@ -117,8 +117,8 @@ const PortfolioHierarchy = () => {
                   <div>
                     <h3 className="font-semibold text-gray-900">{organization.name}</h3>
                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                      <span className="font-mono text-indigo-600">{organization.organizationId}</span>
-                      <span>{organization.headquarters}</span>
+                      <span className="font-mono text-indigo-600">{organization.organizationid}</span>
+                      {organization.headquarters && <span>{organization.headquarters}</span>}
                       <span>{organization.portfolios.length} portfolios</span>
                     </div>
                   </div>
@@ -163,9 +163,8 @@ const PortfolioHierarchy = () => {
                               <h4 className="font-medium text-gray-900">{portfolio.name}</h4>
                             </div>
                             <div className="flex items-center space-x-4 text-sm text-gray-500">
-                              <span className="font-mono text-blue-600">{portfolio.portfolioId}</span>
-                              <span>{portfolio.region}</span>
-                              <span>{portfolio.country}</span>
+                              <span className="font-mono text-blue-600">{portfolio.portfolioid}</span>
+                              {portfolio.description && <span>{portfolio.description}</span>}
                               <span>{portfolio.campuses.length} campuses</span>
                             </div>
                           </div>
@@ -208,18 +207,14 @@ const PortfolioHierarchy = () => {
                                   <div>
                                     <div className="flex items-center space-x-2">
                                       <h5 className="font-medium text-gray-900">{campus.name}</h5>
-                                      <span className="text-lg">{getCampusTypeIcon(campus.type)}</span>
                                       <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(campus.status)}`}>
                                         {campus.status.toUpperCase()}
                                       </span>
                                     </div>
                                     <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                      <span className="font-mono text-green-600">{campus.campusId}</span>
-                                      <span>{campus.city}</span>
+                                      <span className="font-mono text-green-600">{campus.campusid}</span>
+                                      <span>{campus.city}, {campus.country}</span>
                                       <span>{campus.buildings.length} buildings</span>
-                                      {campus.totalParkingSlots4W && (
-                                        <span>🚗 {campus.totalParkingSlots4W} slots</span>
-                                      )}
                                     </div>
                                   </div>
                                 </div>
@@ -264,13 +259,15 @@ const PortfolioHierarchy = () => {
                                               <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusColor(building.status)}`}>
                                                 {building.status.toUpperCase()}
                                               </span>
-                                              <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                                building.ownershipType === 'owned' 
-                                                  ? 'bg-blue-100 text-blue-800 border-blue-200'
-                                                  : 'bg-orange-100 text-orange-800 border-orange-200'
-                                              }`}>
-                                                {building.ownershipType.toUpperCase()}
-                                              </span>
+                                              {building.ownershipType && (
+                                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                                  building.ownershipType === 'owned'
+                                                    ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                                    : 'bg-orange-100 text-orange-800 border-orange-200'
+                                                }`}>
+                                                  {building.ownershipType.toUpperCase()}
+                                                </span>
+                                              )}
                                             </div>
                                             <div className="flex items-center space-x-4 text-sm text-gray-500">
                                               <span className="font-mono text-purple-600">{building.buildingId}</span>
@@ -311,9 +308,11 @@ const PortfolioHierarchy = () => {
                                                     <h6 className="font-medium text-gray-900">Floor {floor.floorNumber}</h6>
                                                     <div className="flex items-center space-x-4 text-sm text-gray-500">
                                                       <span className="font-mono text-orange-600">{floor.floorId}</span>
-                                                      <span>{floor.floorArea.toLocaleString()} sq.ft</span>
+                                                      {floor.floorArea && <span>{floor.floorArea.toLocaleString()} sq.ft</span>}
                                                       <span>{floor.totalSeats} seats</span>
-                                                      <span>🪑 {floor.seatCounts.fixedDesk}F/{floor.seatCounts.hotDesk}H/{floor.seatCounts.cafeSeat}C</span>
+                                                      {floor.seatCounts && (
+                                                        <span>🪑 {floor.seatCounts.fixedDesk}F/{floor.seatCounts.hotDesk}H/{floor.seatCounts.cafeSeat}C</span>
+                                                      )}
                                                     </div>
                                                   </div>
                                                 </div>
