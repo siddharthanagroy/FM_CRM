@@ -60,7 +60,7 @@ interface PortfolioContextType {
   searchEntities: (query: string, entityType?: string) => any[];
 
   getOrganizationHierarchy: () => any[];
-  getOfficeHierarchy: () => any[]; // ✅
+  getOfficeHierarchy: () => any[];
 
   getOrganizationById: (id: string) => Organization | undefined;
   getPortfolioById: (id: string) => Portfolio | undefined;
@@ -132,7 +132,7 @@ export const PortfolioProvider = ({ children }: Props) => {
     }
   };
 
-  // --- Create / Update / Delete functions ---
+  // --- CRUD Functions (same as before) ---
   const createOrganization = async (orgData: any) => {
     const { data, error } = await supabase.from('organizations').insert([orgData]).select();
     if (error) throw error;
@@ -177,14 +177,13 @@ export const PortfolioProvider = ({ children }: Props) => {
   const updateSeatZone = (s: SeatZone) => setSeatZones(prev => prev.map(ss => (ss.id === s.id ? s : ss)));
   const deleteSeatZone = (id: string) => setSeatZones(prev => prev.filter(s => s.id !== id));
 
-  // --- Bulk Imports ---
+  // --- Bulk imports and search ---
   const bulkImportOrganizations = async (data: any[]) => { const { data: inserted, error } = await supabase.from('organizations').insert(data).select(); if (error) throw error; if (inserted) setOrganizations(prev => [...prev, ...inserted]); };
   const bulkImportPortfolios = async (data: any[]) => { const { data: inserted, error } = await supabase.from('portfolios').insert(data).select(); if (error) throw error; if (inserted) setPortfolios(prev => [...prev, ...inserted]); };
   const bulkImportCampuses = async (data: any[]) => { const { data: inserted, error } = await supabase.from('campuses').insert(data).select(); if (error) throw error; if (inserted) setCampuses(prev => [...prev, ...inserted]); };
   const bulkImportBuildings = async (data: any[]) => { const { data: inserted, error } = await supabase.from('buildings').insert(data).select(); if (error) throw error; if (inserted) setBuildings(prev => [...prev, ...inserted]); };
   const bulkImportFloors = async (data: any[]) => { const { data: inserted, error } = await supabase.from('floors').insert(data).select(); if (error) throw error; if (inserted) setFloors(prev => [...prev, ...inserted]); };
 
-  // --- Search ---
   const searchEntities = (query: string, entityType?: string) => {
     const q = query.toLowerCase();
     const safe = (val: any) => (val != null ? String(val).toLowerCase() : '');
@@ -202,24 +201,32 @@ export const PortfolioProvider = ({ children }: Props) => {
     return results;
   };
 
-  // --- Hierarchy ---
+  // --- Hierarchy with Country + City ---
   const getOrganizationHierarchy = () => {
     return organizations.map(org => ({
       ...org,
-      portfolios: portfolios.filter(p => p.organizationid === org.id).map(portfolio => ({
-        ...portfolio,
-        campuses: campuses.filter(c => c.portfolioid === portfolio.id).map(campus => ({
-          ...campus,
-          buildings: buildings.filter(b => b.campusid === campus.id).map(building => ({
-            ...building,
-            floors: floors.filter(f => f.buildingid === building.id)
-          }))
+      portfolios: portfolios
+        .filter(p => p.organizationid === org.id)
+        .map(portfolio => ({
+          ...portfolio,
+          campuses: campuses
+            .filter(c => c.portfolioid === portfolio.id)
+            .map(campus => ({
+              ...campus,
+              country: campus.country,
+              city: campus.city,
+              buildings: buildings
+                .filter(b => b.campusid === campus.id)
+                .map(building => ({
+                  ...building,
+                  floors: floors.filter(f => f.buildingid === building.id)
+                }))
+            }))
         }))
-      }))
     }));
   };
 
-  const getOfficeHierarchy = () => getOrganizationHierarchy(); // ✅ Alias for Header.tsx
+  const getOfficeHierarchy = () => getOrganizationHierarchy(); // Alias for Header.tsx
 
   // --- Get by ID ---
   const getOrganizationById = (id: string) => organizations.find(o => o.id === id);
