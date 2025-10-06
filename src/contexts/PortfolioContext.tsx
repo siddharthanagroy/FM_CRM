@@ -60,7 +60,7 @@ interface PortfolioContextType {
   searchEntities: (query: string, entityType?: string) => any[];
 
   getOrganizationHierarchy: () => any[];
-  getOfficeHierarchy: () => any[]; // ✅ Alias for Header.tsx
+  getOfficeHierarchy: () => any[];
 
   getOrganizationById: (id: string) => Organization | undefined;
   getPortfolioById: (id: string) => Portfolio | undefined;
@@ -132,7 +132,7 @@ export const PortfolioProvider = ({ children }: Props) => {
     }
   };
 
-  // --- CRUD Functions ---
+  // --- CRUD functions ---
   const createOrganization = async (orgData: any) => {
     const { data, error } = await supabase.from('organizations').insert([orgData]).select();
     if (error) throw error;
@@ -177,32 +177,12 @@ export const PortfolioProvider = ({ children }: Props) => {
   const updateSeatZone = (s: SeatZone) => setSeatZones(prev => prev.map(ss => (ss.id === s.id ? s : ss)));
   const deleteSeatZone = (id: string) => setSeatZones(prev => prev.filter(s => s.id !== id));
 
-  // --- Bulk Imports ---
-  const bulkImportOrganizations = async (data: any[]) => {
-    const { data: inserted, error } = await supabase.from('organizations').insert(data).select();
-    if (error) throw error;
-    if (inserted) setOrganizations(prev => [...prev, ...inserted]);
-  };
-  const bulkImportPortfolios = async (data: any[]) => {
-    const { data: inserted, error } = await supabase.from('portfolios').insert(data).select();
-    if (error) throw error;
-    if (inserted) setPortfolios(prev => [...prev, ...inserted]);
-  };
-  const bulkImportCampuses = async (data: any[]) => {
-    const { data: inserted, error } = await supabase.from('campuses').insert(data).select();
-    if (error) throw error;
-    if (inserted) setCampuses(prev => [...prev, ...inserted]);
-  };
-  const bulkImportBuildings = async (data: any[]) => {
-    const { data: inserted, error } = await supabase.from('buildings').insert(data).select();
-    if (error) throw error;
-    if (inserted) setBuildings(prev => [...prev, ...inserted]);
-  };
-  const bulkImportFloors = async (data: any[]) => {
-    const { data: inserted, error } = await supabase.from('floors').insert(data).select();
-    if (error) throw error;
-    if (inserted) setFloors(prev => [...prev, ...inserted]);
-  };
+  // --- Bulk imports ---
+  const bulkImportOrganizations = async (data: any[]) => { const { data: inserted, error } = await supabase.from('organizations').insert(data).select(); if (error) throw error; if (inserted) setOrganizations(prev => [...prev, ...inserted]); };
+  const bulkImportPortfolios = async (data: any[]) => { const { data: inserted, error } = await supabase.from('portfolios').insert(data).select(); if (error) throw error; if (inserted) setPortfolios(prev => [...prev, ...inserted]); };
+  const bulkImportCampuses = async (data: any[]) => { const { data: inserted, error } = await supabase.from('campuses').insert(data).select(); if (error) throw error; if (inserted) setCampuses(prev => [...prev, ...inserted]); };
+  const bulkImportBuildings = async (data: any[]) => { const { data: inserted, error } = await supabase.from('buildings').insert(data).select(); if (error) throw error; if (inserted) setBuildings(prev => [...prev, ...inserted]); };
+  const bulkImportFloors = async (data: any[]) => { const { data: inserted, error } = await supabase.from('floors').insert(data).select(); if (error) throw error; if (inserted) setFloors(prev => [...prev, ...inserted]); };
 
   // --- Search ---
   const searchEntities = (query: string, entityType?: string) => {
@@ -222,24 +202,51 @@ export const PortfolioProvider = ({ children }: Props) => {
     return results;
   };
 
-  // --- Hierarchy ---
+  // --- Hierarchy with Country and City ---
   const getOfficeHierarchy = () => {
     return organizations.map(org => ({
       ...org,
-      portfolios: portfolios.filter(p => p.organizationid === org.id).map(portfolio => ({
-        ...portfolio,
-        campuses: campuses.filter(c => c.portfolioid === portfolio.id).map(campus => ({
-          ...campus,
-          buildings: buildings.filter(b => b.campusid === campus.id).map(building => ({
-            ...building,
-            floors: floors.filter(f => f.buildingid === building.id)
-          }))
-        }))
-      }))
+      portfolios: portfolios
+        .filter(p => p.organizationid === org.id)
+        .map(portfolio => {
+          const campusesByCountry: Record<string, Campus[]> = {};
+          campuses.filter(c => c.portfolioid === portfolio.id)
+            .forEach(c => {
+              if (!campusesByCountry[c.country]) campusesByCountry[c.country] = [];
+              campusesByCountry[c.country].push(c);
+            });
+
+          return {
+            ...portfolio,
+            countries: Object.entries(campusesByCountry).map(([countryName, countryCampuses]) => {
+              const citiesByCity: Record<string, Campus[]> = {};
+              countryCampuses.forEach(c => {
+                if (!citiesByCity[c.city]) citiesByCity[c.city] = [];
+                citiesByCity[c.city].push(c);
+              });
+
+              return {
+                country: countryName,
+                cities: Object.entries(citiesByCity).map(([cityName, cityCampuses]) => ({
+                  city: cityName,
+                  campuses: cityCampuses.map(campus => ({
+                    ...campus,
+                    buildings: buildings
+                      .filter(b => b.campusid === campus.id)
+                      .map(building => ({
+                        ...building,
+                        floors: floors.filter(f => f.buildingid === building.id)
+                      }))
+                  }))
+                }))
+              };
+            })
+          };
+        })
     }));
   };
 
-  const getOrganizationHierarchy = getOfficeHierarchy; // ✅ Alias for backward compatibility
+  const getOrganizationHierarchy = getOfficeHierarchy; // alias
 
   // --- Get by ID ---
   const getOrganizationById = (id: string) => organizations.find(o => o.id === id);
@@ -251,51 +258,20 @@ export const PortfolioProvider = ({ children }: Props) => {
   return (
     <PortfolioContext.Provider
       value={{
-        organizations,
-        portfolios,
-        campuses,
-        buildings,
-        floors,
-        seatZones,
-        loading,
-        error,
-        setOrganizations,
-        setPortfolios,
-        setCampuses,
-        setBuildings,
-        setFloors,
-        setSeatZones,
-        createOrganization,
-        updateOrganization,
-        deleteOrganization,
-        createPortfolio,
-        updatePortfolio,
-        deletePortfolio,
-        createCampus,
-        updateCampus,
-        deleteCampus,
-        createBuilding,
-        updateBuilding,
-        deleteBuilding,
-        createFloor,
-        updateFloor,
-        deleteFloor,
-        createSeatZone,
-        updateSeatZone,
-        deleteSeatZone,
-        bulkImportOrganizations,
-        bulkImportPortfolios,
-        bulkImportCampuses,
-        bulkImportBuildings,
-        bulkImportFloors,
+        organizations, portfolios, campuses, buildings, floors, seatZones,
+        loading, error,
+        setOrganizations, setPortfolios, setCampuses, setBuildings, setFloors, setSeatZones,
+        createOrganization, updateOrganization, deleteOrganization,
+        createPortfolio, updatePortfolio, deletePortfolio,
+        createCampus, updateCampus, deleteCampus,
+        createBuilding, updateBuilding, deleteBuilding,
+        createFloor, updateFloor, deleteFloor,
+        createSeatZone, updateSeatZone, deleteSeatZone,
+        bulkImportOrganizations, bulkImportPortfolios, bulkImportCampuses, bulkImportBuildings, bulkImportFloors,
         searchEntities,
-        getOfficeHierarchy,
         getOrganizationHierarchy,
-        getOrganizationById,
-        getPortfolioById,
-        getCampusById,
-        getBuildingById,
-        getFloorById,
+        getOfficeHierarchy,
+        getOrganizationById, getPortfolioById, getCampusById, getBuildingById, getFloorById,
         fetchAllData
       }}
     >
