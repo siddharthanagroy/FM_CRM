@@ -21,8 +21,6 @@ const PortfolioHierarchy = () => {
   const canManage = user?.role === 'admin' || user?.role === 'fm_manager';
   const hierarchy = getOrganizationHierarchy() || [];
 
-  console.log('Organization Hierarchy:', hierarchy);
-
   const toggleExpanded = (id: string) => {
     const newExpanded = new Set(expandedItems);
     newExpanded.has(id) ? newExpanded.delete(id) : newExpanded.add(id);
@@ -92,56 +90,112 @@ const PortfolioHierarchy = () => {
             </div>
 
             {/* Portfolio */}
-            {expandedItems.has(`org-${org.id}`) &&
-              (org.portfolios || []).map(portfolio => (
-                <div key={portfolio.id} className="pl-8 border-l-2 border-gray-200 ml-4">
-                  <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <button onClick={() => toggleExpanded(`portfolio-${portfolio.id}`)} className="p-1 hover:bg-gray-100 rounded">
-                        {expandedItems.has(`portfolio-${portfolio.id}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                      </button>
-                      <Building2 className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <h4 className="font-medium text-gray-900">{portfolio.name}</h4>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
-                          <span className="font-mono text-blue-600">{portfolio.portfolioid}</span>
-                          {portfolio.description && <span>{portfolio.description}</span>}
-                          <span>{(portfolio.campuses || []).length} campuses</span>
-                        </div>
+            {expandedItems.has(`org-${org.id}`) && (org.portfolios || []).map(portfolio => (
+              <div key={portfolio.id} className="pl-8 border-l-2 border-gray-200 ml-4">
+                <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <button onClick={() => toggleExpanded(`portfolio-${portfolio.id}`)} className="p-1 hover:bg-gray-100 rounded">
+                      {expandedItems.has(`portfolio-${portfolio.id}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                    </button>
+                    <Building2 className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <h4 className="font-medium text-gray-900">{portfolio.name}</h4>
+                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <span className="font-mono text-blue-600">{portfolio.portfolioid}</span>
+                        {portfolio.description && <span>{portfolio.description}</span>}
+                        <span>{(portfolio.campuses || []).length} campuses</span>
                       </div>
                     </div>
-                    {canManage && (
-                      <div className="flex items-center space-x-2">
-                        <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit className="h-4 w-4" /></button>
-                        <button onClick={() => handleDelete('portfolio', portfolio.id, portfolio.name)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-4 w-4" /></button>
-                      </div>
-                    )}
                   </div>
+                  {canManage && (
+                    <div className="flex items-center space-x-2">
+                      <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit className="h-4 w-4" /></button>
+                      <button onClick={() => handleDelete('portfolio', portfolio.id, portfolio.name)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-4 w-4" /></button>
+                    </div>
+                  )}
+                </div>
 
-                  {/* Campus */}
-                  {expandedItems.has(`portfolio-${portfolio.id}`) &&
-                    (portfolio.campuses || []).map(campus => (
-                      <div key={campus.id} className="pl-8 border-l-2 border-gray-200 ml-4">
-                        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
-                          <div className="flex items-center space-x-3">
-                            <button onClick={() => toggleExpanded(`campus-${campus.id}`)} className="p-1 hover:bg-gray-100 rounded">
-                              {expandedItems.has(`campus-${campus.id}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
-                            </button>
-                            <MapPin className="h-5 w-5 text-green-600" />
-                            <div>
-                              <h5 className="font-medium text-gray-900">{campus.name}</h5>
-                              <div className="flex items-center space-x-4 text-sm text-gray-500">
-                                <span className="font-mono text-green-600">{campus.campusid}</span>
-                                <span>{campus.city}, {campus.country}</span>
-                                <span>{(campus.buildings || []).length} buildings</span>
-                              </div>
-                            </div>
+                {/* Campus */}
+                {expandedItems.has(`portfolio-${portfolio.id}`) && (portfolio.campuses || []).map(campus => (
+                  <div key={campus.id} className="pl-8 border-l-2 border-gray-200 ml-4">
+                    <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                      <div className="flex items-center space-x-3">
+                        <button onClick={() => toggleExpanded(`campus-${campus.id}`)} className="p-1 hover:bg-gray-100 rounded">
+                          {expandedItems.has(`campus-${campus.id}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                        </button>
+                        <MapPin className="h-5 w-5 text-green-600" />
+                        <div>
+                          <h5 className="font-medium text-gray-900">{campus.name}</h5>
+                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                            <span className="font-mono text-green-600">{campus.campusid}</span>
+                            <span>{campus.city}, {campus.country}</span>
+                            <span>{(campus.buildings || []).length} buildings</span>
                           </div>
                         </div>
                       </div>
+                      {canManage && (
+                        <div className="flex items-center space-x-2">
+                          <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit className="h-4 w-4" /></button>
+                          <button onClick={() => handleDelete('campus', campus.id, campus.name)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-4 w-4" /></button>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Building */}
+                    {expandedItems.has(`campus-${campus.id}`) && (campus.buildings || []).map(building => (
+                      <div key={building.id} className="pl-8 border-l-2 border-gray-200 ml-4">
+                        <div className="p-4 border-b border-gray-100 flex justify-between items-center">
+                          <div className="flex items-center space-x-3">
+                            <button onClick={() => toggleExpanded(`building-${building.id}`)} className="p-1 hover:bg-gray-100 rounded">
+                              {expandedItems.has(`building-${building.id}`) ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                            </button>
+                            <Home className="h-5 w-5 text-purple-600" />
+                            <div>
+                              <h6 className="font-medium text-gray-900">{building.buildingName}</h6>
+                              <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                <span>{building.numberOfFloors || 0} floors</span>
+                                <span>{(building.floors || []).reduce((sum, f) => sum + (f.totalSeats || 0), 0)} seats</span>
+                              </div>
+                            </div>
+                          </div>
+                          {canManage && (
+                            <div className="flex items-center space-x-2">
+                              <button className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit className="h-4 w-4" /></button>
+                              <button onClick={() => handleDelete('building', building.id, building.buildingName)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-4 w-4" /></button>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Floor */}
+                        {expandedItems.has(`building-${building.id}`) && (building.floors || []).map(floor => (
+                          <div key={floor.id} className="pl-8 border-l-2 border-gray-200 ml-4">
+                            <div className="p-3 border-b border-gray-50 flex justify-between items-center">
+                              <div className="flex items-center space-x-3">
+                                <Layers className="h-4 w-4 text-orange-600" />
+                                <div>
+                                  <h6 className="font-medium text-gray-900">Floor {floor.floorNumber}</h6>
+                                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                                    <span className="font-mono text-orange-600">{floor.floorId}</span>
+                                    <span>{floor.floorArea?.toLocaleString() || 0} sq.ft</span>
+                                    <span>{floor.totalSeats || 0} seats</span>
+                                  </div>
+                                </div>
+                              </div>
+                              {canManage && (
+                                <div className="flex items-center space-x-2">
+                                  <button className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded"><Edit className="h-3 w-3" /></button>
+                                  <button onClick={() => handleDelete('floor', floor.id, `Floor ${floor.floorNumber}`)} className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded"><Trash2 className="h-3 w-3" /></button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     ))}
-                </div>
-              ))}
+                  </div>
+                ))}
+              </div>
+            ))}
           </div>
         ))
       )}
