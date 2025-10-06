@@ -1,3 +1,4 @@
+```tsx
 import React, { createContext, useState, useContext, ReactNode, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import {
@@ -44,6 +45,7 @@ interface PortfolioContextType {
   bulkImportFloors: (data: any[]) => Promise<void>;
   searchEntities: (query: string, entityType?: string) => any[];
   getOrganizationHierarchy: () => any[];
+  getOfficeHierarchy: () => any[]; // ✅ Added
   getOrganizationById: (id: string) => Organization | undefined;
   getPortfolioById: (id: string) => Portfolio | undefined;
   getCampusById: (id: string) => Campus | undefined;
@@ -54,7 +56,6 @@ interface PortfolioContextType {
 
 export const PortfolioContext = createContext<PortfolioContextType>({} as PortfolioContextType);
 
-// Custom hook to use the context
 export const usePortfolio = () => {
   const context = useContext(PortfolioContext);
   if (!context) {
@@ -77,7 +78,6 @@ export const PortfolioProvider = ({ children }: Props) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all data on mount
   useEffect(() => {
     fetchAllData();
   }, []);
@@ -117,9 +117,8 @@ export const PortfolioProvider = ({ children }: Props) => {
     }
   };
 
-  // Create functions with Supabase integration
+  // --- Create functions ---
   const createOrganization = async (orgData: any) => {
-    // Transform camelCase to snake_case for database
     const dbData = {
       name: orgData.name,
       description: orgData.description,
@@ -127,35 +126,23 @@ export const PortfolioProvider = ({ children }: Props) => {
       website: orgData.website,
       country_code: orgData.countryCode || null
     };
-    
-    const { data, error } = await supabase
-      .from('organizations')
-      .insert([dbData])
-      .select();
-    
+    const { data, error } = await supabase.from('organizations').insert([dbData]).select();
     if (error) throw error;
     if (data) setOrganizations(prev => [...prev, ...data]);
   };
 
   const createPortfolio = async (portfolioData: any) => {
-    // Transform camelCase to snake_case for database
     const dbData = {
       organizationid: portfolioData.organizationId,
       name: portfolioData.name,
       description: portfolioData.description || null
     };
-    
-    const { data, error } = await supabase
-      .from('portfolios')
-      .insert([dbData])
-      .select();
-    
+    const { data, error } = await supabase.from('portfolios').insert([dbData]).select();
     if (error) throw error;
     if (data) setPortfolios(prev => [...prev, ...data]);
   };
 
   const createCampus = async (campusData: any) => {
-    // Transform camelCase to snake_case for database
     const dbData = {
       portfolioid: campusData.portfolioId,
       name: campusData.name,
@@ -164,18 +151,12 @@ export const PortfolioProvider = ({ children }: Props) => {
       address: campusData.address,
       status: campusData.status || 'active'
     };
-    
-    const { data, error } = await supabase
-      .from('campuses')
-      .insert([dbData])
-      .select();
-    
+    const { data, error } = await supabase.from('campuses').insert([dbData]).select();
     if (error) throw error;
     if (data) setCampuses(prev => [...prev, ...data]);
   };
 
   const createBuilding = async (buildingData: any) => {
-    // Transform camelCase to snake_case for database
     const dbData = {
       campusid: buildingData.campusId,
       name: buildingData.buildingName,
@@ -183,124 +164,88 @@ export const PortfolioProvider = ({ children }: Props) => {
       totalfloors: buildingData.numberOfFloors || 0,
       status: buildingData.status || 'active'
     };
-    
-    const { data, error } = await supabase
-      .from('buildings')
-      .insert([dbData])
-      .select();
-    
+    const { data, error } = await supabase.from('buildings').insert([dbData]).select();
     if (error) throw error;
     if (data) setBuildings(prev => [...prev, ...data]);
   };
 
   const createFloor = async (floorData: any) => {
-    // Calculate total seats from seatCounts
-    const totalSeats = floorData.seatCounts ? 
-      Object.values(floorData.seatCounts).reduce((sum: number, val) => sum + (Number(val) || 0), 0) : 0;
-    
-    // Transform camelCase to snake_case for database
+    const totalSeats = floorData.seatCounts
+      ? Object.values(floorData.seatCounts).reduce((sum: number, val) => sum + (Number(val) || 0), 0)
+      : 0;
+
     const dbData = {
       buildingid: floorData.buildingId,
       floornumber: floorData.floorNumber,
       totalseats: totalSeats,
       carpetarea: floorData.floorArea || null
     };
-    
-    const { data, error } = await supabase
-      .from('floors')
-      .insert([dbData])
-      .select();
-    
+    const { data, error } = await supabase.from('floors').insert([dbData]).select();
     if (error) throw error;
     if (data) setFloors(prev => [...prev, ...data]);
   };
 
-  // Bulk import functions
+  // --- Bulk imports ---
   const bulkImportOrganizations = async (data: any[]) => {
-    const { data: inserted, error } = await supabase
-      .from('organizations')
-      .insert(data)
-      .select();
-    
+    const { data: inserted, error } = await supabase.from('organizations').insert(data).select();
     if (error) throw error;
     if (inserted) setOrganizations(prev => [...prev, ...inserted]);
   };
 
   const bulkImportPortfolios = async (data: any[]) => {
-    const { data: inserted, error } = await supabase
-      .from('portfolios')
-      .insert(data)
-      .select();
-    
+    const { data: inserted, error } = await supabase.from('portfolios').insert(data).select();
     if (error) throw error;
     if (inserted) setPortfolios(prev => [...prev, ...inserted]);
   };
 
   const bulkImportCampuses = async (data: any[]) => {
-    const { data: inserted, error } = await supabase
-      .from('campuses')
-      .insert(data)
-      .select();
-    
+    const { data: inserted, error } = await supabase.from('campuses').insert(data).select();
     if (error) throw error;
     if (inserted) setCampuses(prev => [...prev, ...inserted]);
   };
 
   const bulkImportBuildings = async (data: any[]) => {
-    const { data: inserted, error } = await supabase
-      .from('buildings')
-      .insert(data)
-      .select();
-    
+    const { data: inserted, error } = await supabase.from('buildings').insert(data).select();
     if (error) throw error;
     if (inserted) setBuildings(prev => [...prev, ...inserted]);
   };
 
   const bulkImportFloors = async (data: any[]) => {
-    const { data: inserted, error } = await supabase
-      .from('floors')
-      .insert(data)
-      .select();
-    
+    const { data: inserted, error } = await supabase.from('floors').insert(data).select();
     if (error) throw error;
     if (inserted) setFloors(prev => [...prev, ...inserted]);
   };
 
-  // Helper functions
+  // --- Helper finders ---
   const getOrganizationById = (id: string) => organizations.find(o => o.id === id);
   const getPortfolioById = (id: string) => portfolios.find(p => p.id === id);
   const getCampusById = (id: string) => campuses.find(c => c.id === id);
   const getBuildingById = (id: string) => buildings.find(b => b.id === id);
   const getFloorById = (id: string) => floors.find(f => f.id === id);
 
-  // Build hierarchy
+  // --- Hierarchy builder ---
   const getOrganizationHierarchy = () => {
     return organizations.map(org => {
       const orgPortfolios = portfolios.filter(p => p.organizationid === org.id);
-      
       return {
         ...org,
         portfolios: orgPortfolios.map(portfolio => {
           const portfolioCampuses = campuses.filter(c => c.portfolioid === portfolio.id);
-          
           return {
             ...portfolio,
             campuses: portfolioCampuses.map(campus => {
               const campusBuildings = buildings.filter(b => b.campusid === campus.id);
-              
               return {
                 ...campus,
                 buildings: campusBuildings.map(building => {
                   const buildingFloors = floors.filter(f => f.buildingid === building.id);
-                  
                   return {
                     ...building,
-                    // Map database fields to component expected fields
                     buildingName: building.name,
                     buildingId: building.buildingid,
                     totalAreaCarpet: building.totalareacarpet,
                     numberOfFloors: building.totalfloors,
-                    ownershipType: 'leased', // Default since not in schema
+                    ownershipType: 'leased',
                     floors: buildingFloors.map(floor => ({
                       ...floor,
                       floorId: floor.floorid,
@@ -324,47 +269,34 @@ export const PortfolioProvider = ({ children }: Props) => {
     });
   };
 
+  // ✅ Alias for Header.tsx compatibility
+  const getOfficeHierarchy = () => getOrganizationHierarchy();
+
+  // --- Search ---
   const searchEntities = (query: string, entityType?: string) => {
     const q = query.toLowerCase();
     const safeString = (val: any) => (val !== undefined && val !== null ? String(val).toLowerCase() : '');
-
     const results: any[] = [];
 
     if (!entityType || entityType === 'all' || entityType === 'organization') {
-      organizations.filter(o =>
-        safeString(o.name).includes(q) ||
-        safeString(o.organizationid).includes(q)
-      ).forEach(o => results.push({ ...o, entityType: 'organization' }));
+      organizations.filter(o => safeString(o.name).includes(q) || safeString(o.organizationid).includes(q))
+        .forEach(o => results.push({ ...o, entityType: 'organization' }));
     }
-
     if (!entityType || entityType === 'all' || entityType === 'portfolio') {
-      portfolios.filter(p =>
-        safeString(p.name).includes(q) ||
-        safeString(p.portfolioid).includes(q)
-      ).forEach(p => results.push({ ...p, entityType: 'portfolio' }));
+      portfolios.filter(p => safeString(p.name).includes(q) || safeString(p.portfolioid).includes(q))
+        .forEach(p => results.push({ ...p, entityType: 'portfolio' }));
     }
-
     if (!entityType || entityType === 'all' || entityType === 'campus') {
-      campuses.filter(c =>
-        safeString(c.name).includes(q) ||
-        safeString(c.campusid).includes(q) ||
-        safeString(c.city).includes(q) ||
-        safeString(c.country).includes(q)
-      ).forEach(c => results.push({ ...c, entityType: 'campus' }));
+      campuses.filter(c => safeString(c.name).includes(q) || safeString(c.campusid).includes(q))
+        .forEach(c => results.push({ ...c, entityType: 'campus' }));
     }
-
     if (!entityType || entityType === 'all' || entityType === 'building') {
-      buildings.filter(b =>
-        safeString(b.name).includes(q) ||
-        safeString(b.buildingid).includes(q)
-      ).forEach(b => results.push({ ...b, buildingName: b.name, entityType: 'building' }));
+      buildings.filter(b => safeString(b.name).includes(q) || safeString(b.buildingid).includes(q))
+        .forEach(b => results.push({ ...b, buildingName: b.name, entityType: 'building' }));
     }
-
     if (!entityType || entityType === 'all' || entityType === 'floor') {
-      floors.filter(f =>
-        safeString(f.floornumber).includes(q) ||
-        safeString(f.floorid).includes(q)
-      ).forEach(f => results.push({ ...f, entityType: 'floor' }));
+      floors.filter(f => safeString(f.floornumber).includes(q) || safeString(f.floorid).includes(q))
+        .forEach(f => results.push({ ...f, entityType: 'floor' }));
     }
 
     return results;
@@ -412,6 +344,7 @@ export const PortfolioProvider = ({ children }: Props) => {
         bulkImportFloors,
         searchEntities,
         getOrganizationHierarchy,
+        getOfficeHierarchy, // ✅ Added here
         getOrganizationById,
         getPortfolioById,
         getCampusById,
@@ -424,3 +357,4 @@ export const PortfolioProvider = ({ children }: Props) => {
     </PortfolioContext.Provider>
   );
 };
+```
