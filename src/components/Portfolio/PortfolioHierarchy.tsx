@@ -22,7 +22,10 @@ export const PortfolioProvider = ({ children }: { children: React.ReactNode }) =
             buildings (
               id, name, buildingid, totalfloors, totalareacarpet, status,
               floors (
-                id, floornumber, totalseats, floorid, carpetarea
+                id, floornumber, totalseats, floorid, carpetarea,
+                seat_zones (
+                  id, name, seatzoneid, occupancystatus
+                )
               )
             )
           )
@@ -42,7 +45,10 @@ export const PortfolioProvider = ({ children }: { children: React.ReactNode }) =
           ...campus,
           buildings: (campus.buildings || []).map(building => ({
             ...building,
-            floors: building.floors || [],
+            floors: (building.floors || []).map(floor => ({
+              ...floor,
+              seat_zones: floor.seat_zones || [],
+            })),
           })),
         })),
       })),
@@ -67,27 +73,39 @@ export const PortfolioProvider = ({ children }: { children: React.ReactNode }) =
 export const PortfolioHierarchy = () => {
   const { hierarchy } = usePortfolio();
 
-  if (!hierarchy || hierarchy.length === 0) {
-    return <div>Loading hierarchy...</div>;
-  }
+  if (!hierarchy || hierarchy.length === 0) return <div>Loading hierarchy...</div>;
 
   return (
     <div className="space-y-4 p-4 bg-white rounded-lg shadow">
       {hierarchy.map(org => (
         <div key={org.id} className="border-b pb-2">
           <div className="font-bold text-lg text-indigo-600">{org.name}</div>
+
           {org.portfolios?.map(port => (
             <div key={port.id} className="pl-4 mt-1">
               <div className="font-semibold text-blue-600">{port.name} (Region)</div>
+
               {port.campuses?.map(campus => (
                 <div key={campus.id} className="pl-4 mt-1">
                   <div className="text-gray-700">{campus.name} - {campus.city}, {campus.country}</div>
+
                   {campus.buildings?.map(building => (
                     <div key={building.id} className="pl-4 mt-1">
                       <div className="text-gray-600">{building.name} ({building.status})</div>
+
                       {building.floors?.map(floor => (
                         <div key={floor.id} className="pl-4 mt-0.5 text-gray-500">
                           Floor {floor.floornumber} - Seats: {floor.totalseats}, Area: {floor.carpetarea || 0}
+
+                          {floor.seat_zones?.length > 0 && (
+                            <div className="pl-4 mt-0.5 text-gray-400">
+                              {floor.seat_zones.map(zone => (
+                                <div key={zone.id}>
+                                  {zone.name} ({zone.occupancystatus})
+                                </div>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
