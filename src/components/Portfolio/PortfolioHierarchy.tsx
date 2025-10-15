@@ -73,3 +73,4 @@ export const PortfolioProvider = ({ children }: { children: React.ReactNode }) =
     </PortfolioContext.Provider>
   );
 };
+export default PortfolioHierarchy;
