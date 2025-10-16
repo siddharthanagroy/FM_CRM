@@ -11,7 +11,7 @@ const PortfolioDashboard = () => {
   const totalBuildings = buildings.length;
   const totalFloors = floors.length;
 
-  const totalSeats = floors.reduce((sum, floor) => sum + floor.totalSeats, 0);
+  const totalSeats = floors.reduce((sum, floor) => sum + Number(floor.totalseats || 0), 0);
   const totalUnits = seatZones.length;
 
   const occupancyRate =
@@ -19,7 +19,7 @@ const PortfolioDashboard = () => {
       ? 0
       : Math.round((seatZones.filter((s) => s.occupancyStatus === 'assigned').length / seatZones.length) * 100);
 
-  const totalArea = buildings.reduce((sum, building) => sum + (building.totalAreaCarpet || 0), 0);
+  const totalArea = buildings.reduce((sum, building) => sum + Number(building.totalareacarpet || 0), 0);
 
   const campusTypes = ['traditional_office', 'sales_office', 'warehouse', 'data_center', 'rd_lab', 'manufacturing', 'retail', 'coworking', 'training_center'];
   const campusesByType = campusTypes.map((type) => {
