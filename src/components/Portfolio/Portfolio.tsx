@@ -68,8 +68,9 @@ const Portfolio = () => {
                 Portfolio Management
               </h1>
             </div>
-/*
+
             {/* Selected Office */}
+            {/*
             {selectedOffice ? (
               <div className="flex items-center gap-2 text-sm text-gray-600 mt-2">
                 <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
@@ -96,7 +97,7 @@ const Portfolio = () => {
               </div>
             )}
           </div>
-*/
+*/}
           {/* Right side buttons */}
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
