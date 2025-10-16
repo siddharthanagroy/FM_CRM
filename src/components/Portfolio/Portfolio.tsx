@@ -96,8 +96,9 @@ const Portfolio = () => {
                 </button>
               </div>
             )}
+            */}
           </div>
-*/}
+
           {/* Right side buttons */}
           {canManage && (
             <div className="flex flex-wrap items-center gap-2">
